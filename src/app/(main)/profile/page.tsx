@@ -3,9 +3,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { fetchMyProfile, upsertProfile } from '@/lib/supabase/queries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import type { UserType, SkillLevel } from '@/types'
+import type { SkillLevel } from '@/types'
 
 const INSTRUMENTS = ['바이올린', '비올라', '첼로', '콘트라베이스', '플루트', '오보에', '클라리넷', '바순', '호른', '트럼펫', '트롬본', '튜바', '피아노', '하프', '타악기']
 const REGIONS = ['서울', '경기', '인천', '부산', '대구', '대전', '광주', '울산', '세종', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주']
@@ -21,13 +22,39 @@ export default function ProfilePage() {
   const router = useRouter()
   const supabase = createClient()
 
+  const [initialLoading, setInitialLoading] = useState(true)
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState(false)
+
   const [displayName, setDisplayName] = useState('')
-  const [userType, setUserType] = useState<UserType>('individual')
   const [selectedInstruments, setSelectedInstruments] = useState<string[]>([])
   const [primaryLevel, setPrimaryLevel] = useState<SkillLevel>('intermediate')
   const [selectedRegion, setSelectedRegion] = useState('')
   const [bio, setBio] = useState('')
+  const [mannerTemperature, setMannerTemperature] = useState(36.5)
+
+  // 기존 프로필 불러오기
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const profile = await fetchMyProfile()
+        if (profile) {
+          setDisplayName(profile.display_name || '')
+          setBio(profile.bio || '')
+          setMannerTemperature(profile.manner_temperature || 36.5)
+          if (profile.region) {
+            setSelectedRegion(profile.region.name || '')
+          }
+        }
+      } catch (e) {
+        console.error('프로필 불러오기 실패:', e)
+      } finally {
+        setInitialLoading(false)
+      }
+    }
+    loadProfile()
+  }, [])
 
   const toggleInstrument = (instrument: string) => {
     setSelectedInstruments(prev =>
@@ -38,17 +65,54 @@ export default function ProfilePage() {
   }
 
   const handleSave = async () => {
+    if (!displayName.trim()) {
+      setError('닉네임을 입력해 주세요.')
+      return
+    }
+
     setLoading(true)
-    // TODO: Supabase에 저장
-    await new Promise(r => setTimeout(r, 1000))
-    setLoading(false)
-    router.push('/')
+    setError(null)
+    setSuccess(false)
+
+    try {
+      // 지역 ID 조회
+      let regionId: string | undefined
+      if (selectedRegion) {
+        const { data: regionData } = await supabase
+          .from('regions')
+          .select('id')
+          .eq('name', selectedRegion)
+          .single()
+        regionId = regionData?.id
+      }
+
+      await upsertProfile({
+        displayName: displayName.trim(),
+        bio: bio.trim() || undefined,
+        regionId,
+      })
+
+      setSuccess(true)
+      setTimeout(() => setSuccess(false), 3000)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : '저장에 실패했습니다. 다시 시도해 주세요.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
+  }
+
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
+      </div>
+    )
   }
 
   return (
@@ -62,6 +126,13 @@ export default function ProfilePage() {
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-4 space-y-4">
+        {error && (
+          <div className="rounded-xl bg-red-50 p-3 text-sm text-red-600">{error}</div>
+        )}
+        {success && (
+          <div className="rounded-xl bg-green-50 p-3 text-sm text-green-600">✓ 프로필이 저장됐습니다!</div>
+        )}
+
         {/* 아바타 */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-col items-center gap-3">
           <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center text-3xl">
@@ -157,10 +228,10 @@ export default function ProfilePage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <h2 className="font-bold text-gray-900">매너온도</h2>
-            <span className="text-2xl font-black text-orange-500">36.5°</span>
+            <span className="text-2xl font-black text-orange-500">{mannerTemperature.toFixed(1)}°</span>
           </div>
           <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-blue-400 via-green-400 to-orange-500 rounded-full" style={{ width: '36.5%' }} />
+            <div className="h-full bg-gradient-to-r from-blue-400 via-green-400 to-orange-500 rounded-full" style={{ width: `${mannerTemperature}%` }} />
           </div>
           <p className="text-xs text-gray-400 mt-2">활동을 통해 매너온도가 올라가요 🌡️</p>
         </div>

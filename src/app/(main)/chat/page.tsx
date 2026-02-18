@@ -23,22 +23,91 @@ export default function ChatListPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { setLoading(false); return }
 
-      const { data } = await supabase
+      // 내가 참여한 채팅방 조회
+      const { data: participations } = await supabase
+        .from('chat_participants')
+        .select('room_id, last_read_at')
+        .eq('user_id', user.id)
+
+      if (!participations || participations.length === 0) {
+        setLoading(false)
+        return
+      }
+
+      const roomIds = participations.map(p => p.room_id)
+
+      // 각 채팅방 정보 조회
+      const { data: chatRooms } = await supabase
         .from('chat_rooms')
         .select(`
           id,
           application:applications(
-            gig:gigs(title),
-            applicant:user_profiles!applications_applicant_id_fkey(display_name),
-            gig_author:user_profiles!gigs_user_id_fkey(display_name)
-          ),
-          participants:chat_participants(user_id, last_read_at),
-          messages:chat_messages(content, created_at, sender_id)
+            gig:gigs(title)
+          )
         `)
-        .order('created_at', { ascending: false })
+        .in('id', roomIds)
 
-      // TODO: 실제 채팅방 데이터 매핑
-      setRooms([])
+      if (!chatRooms) { setLoading(false); return }
+
+      // 각 채팅방의 참여자 및 마지막 메시지 조회
+      const roomPreviews = await Promise.all(
+        chatRooms.map(async (room) => {
+          // 상대방 참여자 조회
+          const { data: participants } = await supabase
+            .from('chat_participants')
+            .select(`
+              user_id,
+              user:user_profiles(display_name)
+            `)
+            .eq('room_id', room.id)
+            .neq('user_id', user.id)
+            .limit(1)
+
+          const otherUser = participants?.[0]
+
+          // 마지막 메시지 조회
+          const { data: lastMessages } = await supabase
+            .from('chat_messages')
+            .select('content, created_at, sender_id')
+            .eq('room_id', room.id)
+            .eq('is_deleted', false)
+            .order('created_at', { ascending: false })
+            .limit(1)
+
+          const lastMsg = lastMessages?.[0]
+
+          // 안 읽은 메시지 수 계산
+          const myParticipation = participations.find(p => p.room_id === room.id)
+          let unreadCount = 0
+          if (myParticipation?.last_read_at) {
+            const { count } = await supabase
+              .from('chat_messages')
+              .select('*', { count: 'exact', head: true })
+              .eq('room_id', room.id)
+              .eq('is_deleted', false)
+              .neq('sender_id', user.id)
+              .gt('created_at', myParticipation.last_read_at)
+            unreadCount = count || 0
+          }
+
+          // gig title 추출 (타입 안전하게)
+          const application = room.application as { gig?: { title?: string } } | null
+          const gigTitle = application?.gig?.title || '공고'
+
+          return {
+            id: room.id,
+            otherUserName: (otherUser?.user as { display_name?: string } | null)?.display_name || '알 수 없음',
+            lastMessage: lastMsg?.content || '대화를 시작해보세요',
+            lastMessageAt: lastMsg
+              ? new Date(lastMsg.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
+              : '',
+            unreadCount,
+            gigTitle,
+          } as ChatRoomPreview
+        })
+      )
+
+      setRooms(roomPreviews)
       setLoading(false)
     }
     fetchRooms()

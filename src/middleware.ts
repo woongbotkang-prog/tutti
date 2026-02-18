@@ -1,36 +1,50 @@
-import { NextResponse, type NextRequest } from 'next/server'
-import { updateSession } from '@/lib/supabase/middleware'
-
-// 로그인이 필요한 경로
-const PROTECTED_PATHS = ['/profile', '/gigs/new', '/chat', '/applications']
-// 로그인 상태에서 접근 불가 경로
-const AUTH_PATHS = ['/login', '/signup']
+import { type NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import { updateSession } from "@/lib/supabase/middleware";
 
 export async function middleware(request: NextRequest) {
-  const response = await updateSession(request)
-  const { pathname } = request.nextUrl
+  const response = await updateSession(request);
 
-  // 세션 확인
-  const sessionCookie = request.cookies.get('sb-krotxjppdiyxvfuoqdqp-auth-token')
-  const isLoggedIn = !!sessionCookie
+  const { pathname } = request.nextUrl;
 
-  // 보호된 경로 → 로그인 필요
-  if (PROTECTED_PATHS.some(p => pathname.startsWith(p)) && !isLoggedIn) {
-    const redirectUrl = new URL('/login', request.url)
-    redirectUrl.searchParams.set('next', pathname)
-    return NextResponse.redirect(redirectUrl)
+  // 인증이 필요한 보호된 경로
+  const isProtectedRoute =
+    pathname.startsWith('/profile') ||
+    pathname.startsWith('/chat') ||
+    pathname === '/gigs/new' ||
+    pathname.includes('/apply');
+
+  if (isProtectedRoute) {
+    // updateSession에서 이미 쿠키를 갱신했으므로 최신 쿠키로 유저 확인
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll() {
+            // 읽기 전용 체크용 - setAll 불필요
+          },
+        },
+      }
+    );
+
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('next', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
-  // 로그인 상태에서 auth 페이지 접근 → 홈으로
-  if (AUTH_PATHS.some(p => pathname.startsWith(p)) && isLoggedIn) {
-    return NextResponse.redirect(new URL('/', request.url))
-  }
-
-  return response
+  return response;
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
-}
+};
