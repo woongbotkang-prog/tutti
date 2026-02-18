@@ -317,7 +317,7 @@ export default function ProfilePage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold text-gray-900">내가 올린 공고</h2>
-            <Link href="/gigs/create" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+            <Link href="/gigs/new" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
               + 새 공고
             </Link>
           </div>

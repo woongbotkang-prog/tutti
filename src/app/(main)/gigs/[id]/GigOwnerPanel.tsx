@@ -35,6 +35,7 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
   const router = useRouter()
   const supabase = createClient()
   const [applications, setApplications] = useState(initialApps)
+  const [chatRoomIds, setChatRoomIds] = useState<Record<string, string>>({})
   const [deleting, setDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [respondingId, setRespondingId] = useState<string | null>(null)
@@ -112,7 +113,10 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
                 { room_id: newRoom.id, user_id: user.id },
                 { room_id: newRoom.id, user_id: applicantId },
               ])
+              setChatRoomIds(prev => ({ ...prev, [applicationId]: newRoom.id }))
             }
+          } else if (existingRoom) {
+            setChatRoomIds(prev => ({ ...prev, [applicationId]: existingRoom.id }))
           }
         }
       }
@@ -192,7 +196,7 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
 
                   {app.status === 'accepted' && (
                     <Link
-                      href="/chat"
+                      href={chatRoomIds[app.id] ? `/chat/${chatRoomIds[app.id]}` : '/chat'}
                       className="block w-full py-2 text-sm font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-center mt-2"
                     >
                       💬 채팅 바로가기

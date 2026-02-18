@@ -62,7 +62,8 @@ function GigCard({ gig }: { gig: GigListItem }) {
     ? Math.ceil((new Date(gig.expires_at).getTime() - Date.now()) / 86_400_000)
     : null
 
-  const isExpired = daysLeft !== null && daysLeft < 0
+  const isClosed = gig.status === 'closed' || gig.status === 'expired'
+  const isExpired = isClosed || (daysLeft !== null && daysLeft < 0)
 
   return (
     <Link href={`/gigs/${gig.id}`}>
