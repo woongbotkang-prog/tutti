@@ -11,7 +11,7 @@ const LEVEL_LABELS: Record<string, string> = {
   professional: '전문가',
 }
 
-export default async function GigDetailPage({ params }: { params: { id: string } }) {
+export default async function GigDetailPage({ params, searchParams }: { params: { id: string }; searchParams: { applied?: string } }) {
   const supabase = await createClient()
 
   const { data: gig, error } = await supabase
@@ -62,6 +62,11 @@ export default async function GigDetailPage({ params }: { params: { id: string }
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-4 space-y-4">
+        {searchParams.applied === '1' && (
+          <div className="rounded-2xl bg-green-50 border border-green-200 p-4 text-sm text-green-700 font-medium">
+            ✅ 지원이 완료되었습니다! 결과는 알림으로 안내드릴게요.
+          </div>
+        )}
         {/* 기본 정보 카드 */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">

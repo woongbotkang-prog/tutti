@@ -48,9 +48,9 @@ export default function ProfilePage() {
           }
           if (profile.instruments && profile.instruments.length > 0) {
             setSelectedInstruments(
-              profile.instruments.map((ui: any) => ui.instrument?.name).filter(Boolean)
+              profile.instruments.map((ui: { instrument?: { name: string } | null }) => ui.instrument?.name).filter(Boolean) as string[]
             )
-            const primary = profile.instruments.find((ui: any) => ui.is_primary)
+            const primary = profile.instruments.find((ui: { is_primary: boolean }) => ui.is_primary)
             if (primary?.skill_level) {
               setPrimaryLevel(primary.skill_level)
             } else if (profile.instruments[0]?.skill_level) {
