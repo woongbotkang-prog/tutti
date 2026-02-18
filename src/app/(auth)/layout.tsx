@@ -23,8 +23,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       </main>
 
       {/* Footer */}
-      <footer className="text-center py-6 text-xs text-gray-400">
-        © 2026 TUTTI. 클래식 연주자 매칭 플랫폼
+      <footer className="text-center py-6 text-xs text-gray-400 space-y-1">
+        <div>
+          <Link href="/privacy" className="hover:text-gray-600 underline">개인정보처리방침</Link>
+        </div>
+        <div>© 2026 TUTTI. 클래식 연주자 매칭 플랫폼</div>
       </footer>
     </div>
   )

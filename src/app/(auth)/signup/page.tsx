@@ -23,6 +23,7 @@ export default function SignUpPage() {
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [agreedToPrivacy, setAgreedToPrivacy] = useState(false)
 
   const handleTypeSelect = (type: UserType) => {
     setUserType(type)
@@ -239,13 +240,19 @@ export default function SignUpPage() {
             autoComplete="new-password"
           />
 
-          <p className="text-xs text-gray-500 leading-relaxed">
-            가입하면{' '}
-            <Link href="/terms" className="text-indigo-600 underline">이용약관</Link>
-            {' '}및{' '}
-            <Link href="/privacy" className="text-indigo-600 underline">개인정보처리방침</Link>
-            에 동의하는 것으로 간주됩니다.
-          </p>
+          <label className="flex items-start gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={agreedToPrivacy}
+              onChange={(e) => setAgreedToPrivacy(e.target.checked)}
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              required
+            />
+            <span className="text-xs text-gray-500 leading-relaxed">
+              <Link href="/privacy" className="text-indigo-600 underline" target="_blank">개인정보처리방침</Link>
+              을 읽었으며 이에 동의합니다. (필수)
+            </span>
+          </label>
 
           <Button type="submit" size="full" isLoading={isLoading} className="bg-indigo-600 hover:bg-indigo-700">
             가입하기

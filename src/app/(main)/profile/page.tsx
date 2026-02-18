@@ -34,6 +34,9 @@ export default function ProfilePage() {
   const [selectedRegion, setSelectedRegion] = useState('')
   const [bio, setBio] = useState('')
   const [mannerTemperature, setMannerTemperature] = useState(36.5)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [myGigs, setMyGigs] = useState<Array<{
     id: string
     gig_type: 'hiring' | 'seeking'
@@ -168,6 +171,28 @@ export default function ProfilePage() {
     await supabase.auth.signOut()
     router.push('/login')
     router.refresh()
+  }
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== '탈퇴') return
+    setDeleteLoading(true)
+    try {
+      // 프로필 데이터 삭제 (cascade 또는 수동)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase.from('user_instruments').delete().eq('user_id', user.id)
+        await supabase.from('profiles').delete().eq('id', user.id)
+      }
+      await supabase.auth.signOut()
+      router.push('/login')
+      router.refresh()
+    } catch (e) {
+      console.error('탈퇴 실패:', e)
+      setError('탈퇴 처리 중 오류가 발생했습니다. 다시 시도해 주세요.')
+    } finally {
+      setDeleteLoading(false)
+      setShowDeleteDialog(false)
+    }
   }
 
   if (initialLoading) {
@@ -356,7 +381,63 @@ export default function ProfilePage() {
         <Button onClick={handleSave} size="full" isLoading={loading} className="bg-indigo-600 hover:bg-indigo-700">
           저장하기
         </Button>
+
+        {/* 계정 삭제 */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <h2 className="font-bold text-gray-900 mb-2">계정 관리</h2>
+          <p className="text-xs text-gray-500 mb-3">
+            탈퇴 시 모든 개인정보와 활동 데이터가 삭제되며 복구할 수 없습니다.
+          </p>
+          <button
+            onClick={() => setShowDeleteDialog(true)}
+            className="text-sm text-red-500 hover:text-red-700 font-medium"
+          >
+            회원 탈퇴
+          </button>
+        </div>
+
+        {/* 개인정보처리방침 링크 */}
+        <div className="text-center pb-4">
+          <Link href="/privacy" className="text-xs text-gray-400 hover:text-gray-600 underline">
+            개인정보처리방침
+          </Link>
+        </div>
       </main>
+
+      {/* 탈퇴 확인 다이얼로그 */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full shadow-xl">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">정말 탈퇴하시겠습니까?</h3>
+            <p className="text-sm text-gray-500 mb-4">
+              탈퇴하면 모든 프로필 정보, 공고, 지원 내역이 삭제됩니다.
+              확인을 위해 아래에 <strong>&ldquo;탈퇴&rdquo;</strong>를 입력해 주세요.
+            </p>
+            <input
+              type="text"
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="탈퇴"
+              className="w-full h-10 rounded-xl border border-gray-200 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-red-500 mb-4"
+            />
+            <div className="flex gap-2">
+              <button
+                onClick={() => { setShowDeleteDialog(false); setDeleteConfirmText('') }}
+                className="flex-1 h-10 rounded-xl border border-gray-200 text-sm font-medium text-gray-600 hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== '탈퇴' || deleteLoading}
+                className="flex-1 h-10 rounded-xl bg-red-500 text-white text-sm font-medium hover:bg-red-600 disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                {deleteLoading ? '처리 중...' : '탈퇴하기'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
