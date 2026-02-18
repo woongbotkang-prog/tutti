@@ -33,6 +33,9 @@ export default function NewGigPage() {
   const [maxApplicants, setMaxApplicants] = useState('1')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // 프로젝트 모드
+  const [isProject, setIsProject] = useState(false)
+  const [pieceName, setPieceName] = useState('')
 
   const toggleInstrument = (i: string) =>
     setSelectedInstruments(p => p.includes(i) ? p.filter(x => x !== i) : [...p, i])
@@ -67,6 +70,8 @@ export default function NewGigPage() {
         region_id: regionData?.id || null,
         min_skill_level: minLevel,
         is_paid: isPaid,
+        is_project: isProject,
+        piece_name: isProject && pieceName.trim() ? pieceName.trim() : null,
         max_applicants: parseInt(maxApplicants) || 1,
         event_date: eventDate || null,
         status: 'active',
@@ -140,12 +145,46 @@ export default function NewGigPage() {
           </div>
         </div>
 
+        {/* 프로젝트 모드 */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setIsProject(p => !p)}
+            className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-colors ${
+              isProject ? 'border-purple-400 bg-purple-50' : 'border-gray-100 bg-gray-50'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-lg">🎼</span>
+              <div className="text-left">
+                <p className={`text-sm font-bold ${isProject ? 'text-purple-700' : 'text-gray-700'}`}>
+                  곡 기반 프로젝트 모집
+                </p>
+                <p className="text-xs text-gray-400">특정 곡을 함께 연주할 사람을 찾아요</p>
+              </div>
+            </div>
+            <div className={`w-12 h-6 rounded-full transition-colors flex items-center ${isProject ? 'bg-purple-500' : 'bg-gray-200'}`}>
+              <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5 ${isProject ? 'translate-x-6' : ''}`} />
+            </div>
+          </button>
+          {isProject && (
+            <div className="mt-3">
+              <Input
+                label="연주 곡명"
+                placeholder="예: 베토벤 교향곡 9번, 드보르작 첼로 협주곡..."
+                value={pieceName}
+                onChange={e => setPieceName(e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+
         {/* 기본 정보 */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-4">
           <h2 className="font-bold text-gray-900">기본 정보</h2>
           <Input
             label="제목"
-            placeholder="예: 바이올린 2파트 단원 모집"
+            placeholder={isProject ? '예: 베토벤 9번 연주 프로젝트 — 바이올린 모집' : '예: 바이올린 2파트 단원 모집'}
             value={title}
             onChange={e => setTitle(e.target.value)}
             required

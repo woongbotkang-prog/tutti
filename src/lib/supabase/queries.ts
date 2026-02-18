@@ -16,6 +16,7 @@ export interface FetchGigsParams {
   page?: number
   limit?: number
   includeExpired?: boolean
+  isProject?: boolean
 }
 
 export interface GigListItem {
@@ -24,6 +25,9 @@ export interface GigListItem {
   status: 'active' | 'paused' | 'closed' | 'expired'
   title: string
   is_paid: boolean
+  is_project: boolean
+  piece_name: string | null
+  composer_id: string | null
   event_date: string | null
   expires_at: string | null
   view_count: number
@@ -49,6 +53,7 @@ export async function fetchGigs({
   page = 0,
   limit = 10,
   includeExpired = false,
+  isProject,
 }: FetchGigsParams = {}): Promise<FetchGigsResult> {
   const supabase = createClient()
 
@@ -87,7 +92,7 @@ export async function fetchGigs({
   let query = supabase
     .from('gigs')
     .select(`
-      id, gig_type, status, title, is_paid, event_date, expires_at, view_count, min_skill_level,
+      id, gig_type, status, title, is_paid, is_project, piece_name, composer_id, event_date, expires_at, view_count, min_skill_level,
       region:regions(name),
       author:user_profiles!gigs_user_id_fkey(display_name),
       instruments:gig_instruments(
@@ -97,6 +102,7 @@ export async function fetchGigs({
     .in('status', includeExpired ? ['active', 'closed', 'expired'] : ['active'])
 
   if (gigType) query = query.eq('gig_type', gigType)
+  if (isProject === true) query = query.eq('is_project', true)
   if (regionId) query = query.eq('region_id', regionId)
   if (allowedGigIds) query = query.in('id', allowedGigIds)
   if (searchQuery?.trim()) query = query.ilike('title', `%${searchQuery.trim()}%`)

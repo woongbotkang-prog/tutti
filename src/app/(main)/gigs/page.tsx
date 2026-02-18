@@ -99,6 +99,9 @@ function GigCard({ gig }: { gig: GigListItem }) {
           </span>
         </div>
 
+        {gig.is_project && gig.piece_name && (
+          <p className="text-xs font-medium text-purple-600 mb-1">🎼 {gig.piece_name}</p>
+        )}
         <h3 className="font-bold text-gray-900 mb-1.5 leading-snug">{gig.title}</h3>
 
         <div className="flex items-center justify-between">
@@ -122,7 +125,7 @@ function GigCard({ gig }: { gig: GigListItem }) {
 
 // ── 메인 페이지 ────────────────────────────────────────────────
 export default function GigsPage() {
-  const [activeTab, setActiveTab]             = useState<'all' | 'hiring' | 'seeking'>('all')
+  const [activeTab, setActiveTab]             = useState<'all' | 'hiring' | 'seeking' | 'project'>('all')
   const [selectedInstrument, setSelectedInstrument] = useState('전체')
   const [selectedRegion, setSelectedRegion]   = useState('전체')
   const [sortBy, setSortBy]                   = useState<SortOption>('latest')
@@ -159,7 +162,8 @@ export default function GigsPage() {
     setError(null)
     try {
       const result = await fetchGigs({
-        gigType: activeTab !== 'all' ? activeTab : undefined,
+        gigType: activeTab === 'project' ? undefined : (activeTab !== 'all' ? activeTab : undefined),
+        isProject: activeTab === 'project' ? true : undefined,
         instrumentName: selectedInstrument,
         regionName: selectedRegion,
         searchQuery,
@@ -186,7 +190,8 @@ export default function GigsPage() {
     const nextPage = page + 1
     try {
       const result = await fetchGigs({
-        gigType: activeTab !== 'all' ? activeTab : undefined,
+        gigType: activeTab === 'project' ? undefined : (activeTab !== 'all' ? activeTab : undefined),
+        isProject: activeTab === 'project' ? true : undefined,
         instrumentName: selectedInstrument,
         regionName: selectedRegion,
         searchQuery,
@@ -243,13 +248,16 @@ export default function GigsPage() {
             { key: 'all',     label: '전체' },
             { key: 'hiring',  label: '구인' },
             { key: 'seeking', label: '구직' },
+            { key: 'project', label: '🎼 프로젝트' },
           ].map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveTab(tab.key as typeof activeTab)}
               className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab.key
-                  ? 'border-indigo-600 text-indigo-600'
+                  ? tab.key === 'project'
+                    ? 'border-purple-600 text-purple-600'
+                    : 'border-indigo-600 text-indigo-600'
                   : 'border-transparent text-gray-500'
               }`}
             >
