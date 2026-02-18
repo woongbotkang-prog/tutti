@@ -189,6 +189,15 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
                       </button>
                     </div>
                   )}
+
+                  {app.status === 'accepted' && (
+                    <Link
+                      href="/chat"
+                      className="block w-full py-2 text-sm font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-center mt-2"
+                    >
+                      💬 채팅 바로가기
+                    </Link>
+                  )}
                 </div>
               )
             })}

@@ -62,9 +62,11 @@ function GigCard({ gig }: { gig: GigListItem }) {
     ? Math.ceil((new Date(gig.expires_at).getTime() - Date.now()) / 86_400_000)
     : null
 
+  const isExpired = daysLeft !== null && daysLeft < 0
+
   return (
     <Link href={`/gigs/${gig.id}`}>
-      <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all active:scale-[0.99]">
+      <div className={`bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all active:scale-[0.99] ${isExpired ? 'opacity-50' : ''}`}>
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span
@@ -81,11 +83,15 @@ function GigCard({ gig }: { gig: GigListItem }) {
                 유급
               </span>
             )}
-            {daysLeft !== null && daysLeft <= 7 && daysLeft >= 0 && (
+            {isExpired ? (
+              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-200 text-gray-500">
+                마감
+              </span>
+            ) : daysLeft !== null && daysLeft <= 7 && daysLeft >= 0 ? (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-600">
                 D-{daysLeft}
               </span>
-            )}
+            ) : null}
           </div>
           <span className="text-xs text-gray-400 shrink-0 ml-2">
             {gig.region?.name || '지역미정'}

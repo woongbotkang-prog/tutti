@@ -7,6 +7,13 @@ export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
+  const { data: latestGigs } = await supabase
+    .from('gigs')
+    .select('id, title, gig_type, created_at, region:regions(name)')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(3)
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-white">
       {/* 헤더 */}
@@ -63,6 +70,37 @@ export default async function HomePage() {
           </div>
         )}
       </section>
+
+      {/* 최신 공고 */}
+      {latestGigs && latestGigs.length > 0 && (
+        <section className="max-w-lg mx-auto px-6 pb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-gray-900">최신 공고</h2>
+            <Link href="/gigs" className="text-xs text-indigo-600 font-medium">
+              전체 보기 →
+            </Link>
+          </div>
+          <div className="space-y-2.5">
+            {latestGigs.map((gig: any) => (
+              <Link key={gig.id} href={`/gigs/${gig.id}`}>
+                <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                      gig.gig_type === 'hiring' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
+                    }`}>
+                      {gig.gig_type === 'hiring' ? '구인' : '구직'}
+                    </span>
+                    {gig.region?.[0]?.name && (
+                      <span className="text-xs text-gray-400">{gig.region[0].name}</span>
+                    )}
+                  </div>
+                  <h3 className="font-bold text-gray-900 text-sm leading-snug">{gig.title}</h3>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 빠른 바로가기 */}
       <section className="max-w-lg mx-auto px-6 pb-6">
