@@ -5,44 +5,116 @@ import type { Gig, Application, UserProfile, SkillLevel } from '@/types'
 // GIGS
 // ============================================================
 
+export type SortOption = 'latest' | 'expiring' | 'popular'
+
+export interface FetchGigsParams {
+  gigType?: 'hiring' | 'seeking'
+  instrumentName?: string
+  regionName?: string
+  searchQuery?: string
+  sortBy?: SortOption
+  page?: number
+  limit?: number
+}
+
+export interface GigListItem {
+  id: string
+  gig_type: 'hiring' | 'seeking'
+  title: string
+  is_paid: boolean
+  event_date: string | null
+  expires_at: string | null
+  view_count: number
+  min_skill_level: string | null
+  region: { name: string } | null
+  author: { display_name: string } | null
+  instruments: Array<{
+    instrument: { name: string } | null
+  }>
+}
+
+export interface FetchGigsResult {
+  data: GigListItem[]
+  hasMore: boolean
+}
+
 export async function fetchGigs({
   gigType,
   instrumentName,
   regionName,
+  searchQuery,
+  sortBy = 'latest',
   page = 0,
-  limit = 20,
-}: {
-  gigType?: 'hiring' | 'seeking'
-  instrumentName?: string
-  regionName?: string
-  page?: number
-  limit?: number
-}) {
+  limit = 10,
+}: FetchGigsParams = {}): Promise<FetchGigsResult> {
   const supabase = createClient()
+
+  // Step 1: 악기 필터 — instrument name → gig IDs
+  let allowedGigIds: string[] | null = null
+  if (instrumentName && instrumentName !== '전체') {
+    const { data: instrData } = await supabase
+      .from('instruments')
+      .select('id')
+      .eq('name', instrumentName)
+      .single()
+
+    if (!instrData) return { data: [], hasMore: false }
+
+    const { data: gigInstrData } = await supabase
+      .from('gig_instruments')
+      .select('gig_id')
+      .eq('instrument_id', instrData.id)
+
+    allowedGigIds = (gigInstrData ?? []).map((gi: { gig_id: string }) => gi.gig_id)
+    if (allowedGigIds.length === 0) return { data: [], hasMore: false }
+  }
+
+  // Step 2: 지역 필터 — region name → region ID
+  let regionId: string | null = null
+  if (regionName && regionName !== '전체') {
+    const { data: regionData } = await supabase
+      .from('regions')
+      .select('id')
+      .eq('name', regionName)
+      .single()
+    regionId = regionData?.id ?? null
+  }
+
+  // Step 3: 메인 쿼리
   let query = supabase
     .from('gigs')
     .select(`
-      *,
-      author:user_profiles!gigs_user_id_fkey(id, display_name, avatar_url, manner_temperature),
-      region:regions(id, name),
+      id, gig_type, title, is_paid, event_date, expires_at, view_count, min_skill_level,
+      region:regions(name),
+      author:user_profiles!gigs_user_id_fkey(display_name),
       instruments:gig_instruments(
-        id, count_needed,
-        instrument:instruments(id, name)
+        instrument:instruments(name)
       )
     `)
     .eq('status', 'active')
-    .order('created_at', { ascending: false })
-    .range(page * limit, (page + 1) * limit - 1)
 
   if (gigType) query = query.eq('gig_type', gigType)
-  if (regionName) {
-    const { data: region } = await supabase.from('regions').select('id').eq('name', regionName).single()
-    if (region) query = query.eq('region_id', region.id)
+  if (regionId) query = query.eq('region_id', regionId)
+  if (allowedGigIds) query = query.in('id', allowedGigIds)
+  if (searchQuery?.trim()) query = query.ilike('title', `%${searchQuery.trim()}%`)
+
+  // 정렬
+  if (sortBy === 'latest') {
+    query = query.order('created_at', { ascending: false })
+  } else if (sortBy === 'expiring') {
+    query = query.not('expires_at', 'is', null).order('expires_at', { ascending: true })
+  } else if (sortBy === 'popular') {
+    query = query.order('view_count', { ascending: false })
   }
+
+  // 페이지네이션
+  query = query.range(page * limit, (page + 1) * limit - 1)
 
   const { data, error } = await query
   if (error) throw error
-  return data
+
+  const result = (data ?? []) as unknown as GigListItem[]
+  return { data: result, hasMore: result.length === limit }
 }
 
 export async function fetchGigById(id: string) {
