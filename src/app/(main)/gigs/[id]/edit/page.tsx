@@ -78,6 +78,7 @@ export default function EditGigPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (isLoading) return
     if (!title.trim()) return setError('제목을 입력해 주세요.')
     if (selectedInstruments.length === 0) return setError('악기를 하나 이상 선택해 주세요.')
     if (!selectedRegion) return setError('지역을 선택해 주세요.')

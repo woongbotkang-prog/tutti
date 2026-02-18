@@ -183,7 +183,7 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
               <Button size="full" disabled className="bg-gray-300 text-gray-600 cursor-not-allowed">
                 이미 지원한 공고입니다
               </Button>
-            ) : gig.status !== 'active' ? (
+            ) : gig.status !== 'active' || (gig.expires_at && new Date(gig.expires_at) < new Date()) ? (
               <Button size="full" disabled className="bg-gray-300 text-gray-600 cursor-not-allowed">
                 마감된 공고입니다
               </Button>
