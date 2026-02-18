@@ -21,6 +21,7 @@ export interface FetchGigsParams {
 export interface GigListItem {
   id: string
   gig_type: 'hiring' | 'seeking'
+  status: 'active' | 'paused' | 'closed' | 'expired'
   title: string
   is_paid: boolean
   event_date: string | null
@@ -86,7 +87,7 @@ export async function fetchGigs({
   let query = supabase
     .from('gigs')
     .select(`
-      id, gig_type, title, is_paid, event_date, expires_at, view_count, min_skill_level,
+      id, gig_type, status, title, is_paid, event_date, expires_at, view_count, min_skill_level,
       region:regions(name),
       author:user_profiles!gigs_user_id_fkey(display_name),
       instruments:gig_instruments(

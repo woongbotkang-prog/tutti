@@ -1,8 +1,23 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import GigOwnerPanel from './GigOwnerPanel'
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const supabase = await createClient()
+  const { data: gig } = await supabase
+    .from('gigs')
+    .select('title, description')
+    .eq('id', params.id)
+    .single()
+
+  return {
+    title: gig ? `${gig.title} | TUTTI` : 'TUTTI',
+    description: gig?.description?.slice(0, 150) || '클래식 연주자 매칭 플랫폼',
+  }
+}
 
 const LEVEL_LABELS: Record<string, string> = {
   beginner: '입문',
