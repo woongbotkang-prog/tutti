@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { fetchMyProfile, upsertProfile } from '@/lib/supabase/queries'
+import { fetchMyProfile, upsertProfile, upsertUserInstruments } from '@/lib/supabase/queries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { SkillLevel } from '@/types'
@@ -46,6 +46,17 @@ export default function ProfilePage() {
           if (profile.region) {
             setSelectedRegion(profile.region.name || '')
           }
+          if (profile.instruments && profile.instruments.length > 0) {
+            setSelectedInstruments(
+              profile.instruments.map((ui: any) => ui.instrument?.name).filter(Boolean)
+            )
+            const primary = profile.instruments.find((ui: any) => ui.is_primary)
+            if (primary?.skill_level) {
+              setPrimaryLevel(primary.skill_level)
+            } else if (profile.instruments[0]?.skill_level) {
+              setPrimaryLevel(profile.instruments[0].skill_level)
+            }
+          }
         }
       } catch (e) {
         console.error('프로필 불러오기 실패:', e)
@@ -67,6 +78,18 @@ export default function ProfilePage() {
   const handleSave = async () => {
     if (!displayName.trim()) {
       setError('닉네임을 입력해 주세요.')
+      return
+    }
+    if (displayName.trim().length < 2 || displayName.trim().length > 20) {
+      setError('닉네임은 2~20자로 입력해 주세요.')
+      return
+    }
+    if (selectedInstruments.length === 0) {
+      setError('연주 악기를 최소 1개 선택해 주세요.')
+      return
+    }
+    if (bio.length > 500) {
+      setError('자기소개는 500자 이내로 입력해 주세요.')
       return
     }
 
@@ -91,6 +114,15 @@ export default function ProfilePage() {
         bio: bio.trim() || undefined,
         regionId,
       })
+
+      // 악기 저장
+      await upsertUserInstruments(
+        selectedInstruments.map((name, idx) => ({
+          name,
+          skillLevel: primaryLevel,
+          isPrimary: idx === 0,
+        }))
+      )
 
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
@@ -171,8 +203,10 @@ export default function ProfilePage() {
               value={bio}
               onChange={e => setBio(e.target.value)}
               rows={3}
+              maxLength={500}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
             />
+            <p className="text-xs text-gray-400 text-right mt-1">{bio.length}/500</p>
           </div>
         </div>
 

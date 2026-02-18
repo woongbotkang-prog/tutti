@@ -1,5 +1,5 @@
 import { createClient } from './client'
-import type { Gig, Application, UserProfile } from '@/types'
+import type { Gig, Application, UserProfile, SkillLevel } from '@/types'
 
 // ============================================================
 // GIGS
@@ -201,6 +201,50 @@ export async function upsertProfile(profileData: {
     .select()
     .single()
 
+  if (error) throw error
+  return data
+}
+
+export async function upsertUserInstruments(
+  instruments: { name: string; skillLevel: SkillLevel; isPrimary: boolean }[]
+) {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('로그인이 필요합니다.')
+
+  // 기존 악기 삭제
+  const { error: deleteError } = await supabase
+    .from('user_instruments')
+    .delete()
+    .eq('user_id', user.id)
+  if (deleteError) throw deleteError
+
+  if (instruments.length === 0) return []
+
+  // 악기 ID 조회
+  const { data: instrumentRows, error: lookupError } = await supabase
+    .from('instruments')
+    .select('id, name')
+    .in('name', instruments.map(i => i.name))
+  if (lookupError) throw lookupError
+
+  const nameToId = new Map(instrumentRows?.map(r => [r.name, r.id]) || [])
+
+  const rows = instruments
+    .filter(i => nameToId.has(i.name))
+    .map(i => ({
+      user_id: user.id,
+      instrument_id: nameToId.get(i.name)!,
+      skill_level: i.skillLevel,
+      is_primary: i.isPrimary,
+    }))
+
+  if (rows.length === 0) return []
+
+  const { data, error } = await supabase
+    .from('user_instruments')
+    .insert(rows)
+    .select()
   if (error) throw error
   return data
 }
