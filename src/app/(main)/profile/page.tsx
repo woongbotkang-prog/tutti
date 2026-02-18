@@ -170,7 +170,7 @@ export default function ProfilePage() {
           <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center text-3xl">
             🎻
           </div>
-          <button className="text-sm text-indigo-600 font-medium">사진 변경</button>
+          <span className="text-sm text-gray-400">사진 변경 (준비 중)</span>
         </div>
 
         {/* 기본 정보 */}

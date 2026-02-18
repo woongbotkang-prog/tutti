@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
+import GigOwnerPanel from './GigOwnerPanel'
 
 const LEVEL_LABELS: Record<string, string> = {
   beginner: '입문',
@@ -45,6 +46,23 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
       .eq('applicant_id', user.id)
       .single()
     hasApplied = !!application
+  }
+
+  // 작성자인 경우 지원자 목록 조회
+  let applications: any[] = []
+  if (isOwner) {
+    const { data: apps } = await supabase
+      .from('applications')
+      .select(`
+        id, status, message, applied_at,
+        applicant:user_profiles!applications_applicant_id_fkey(
+          id, display_name, avatar_url, manner_temperature,
+          region:regions(name)
+        )
+      `)
+      .eq('gig_id', params.id)
+      .order('applied_at', { ascending: false })
+    applications = apps || []
   }
 
   return (
@@ -143,6 +161,11 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
             <h3 className="font-bold text-gray-900 mb-2">보수</h3>
             <p className="text-sm text-gray-700">{gig.compensation}</p>
           </div>
+        )}
+
+        {/* 작성자 관리 패널 */}
+        {isOwner && (
+          <GigOwnerPanel gigId={gig.id} applications={applications} />
         )}
       </main>
 
