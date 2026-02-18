@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { fetchMyProfile, upsertProfile, upsertUserInstruments } from '@/lib/supabase/queries'
+import { fetchMyProfile, upsertProfile, upsertUserInstruments, fetchMyGigs, fetchUnreadNotificationCount } from '@/lib/supabase/queries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { SkillLevel } from '@/types'
@@ -33,6 +34,18 @@ export default function ProfilePage() {
   const [selectedRegion, setSelectedRegion] = useState('')
   const [bio, setBio] = useState('')
   const [mannerTemperature, setMannerTemperature] = useState(36.5)
+  const [myGigs, setMyGigs] = useState<Array<{
+    id: string
+    gig_type: 'hiring' | 'seeking'
+    title: string
+    status: string
+    created_at: string
+    expires_at: string | null
+    view_count: number
+    region: { name: string } | null
+    instruments: Array<{ instrument: { name: string } | null }>
+  }>>([])
+  const [unreadCount, setUnreadCount] = useState(0)
 
   // 기존 프로필 불러오기
   useEffect(() => {
@@ -64,7 +77,25 @@ export default function ProfilePage() {
         setInitialLoading(false)
       }
     }
+    const loadMyGigs = async () => {
+      try {
+        const gigs = await fetchMyGigs()
+        setMyGigs(gigs as unknown as typeof myGigs)
+      } catch (e) {
+        console.error('내 공고 불러오기 실패:', e)
+      }
+    }
+    const loadUnread = async () => {
+      try {
+        const count = await fetchUnreadNotificationCount()
+        setUnreadCount(count)
+      } catch (e) {
+        console.error('알림 수 불러오기 실패:', e)
+      }
+    }
     loadProfile()
+    loadMyGigs()
+    loadUnread()
   }, [])
 
   const toggleInstrument = (instrument: string) => {
@@ -152,9 +183,21 @@ export default function ProfilePage() {
       {/* 헤더 */}
       <header className="bg-white px-4 py-4 flex items-center justify-between border-b border-gray-100 sticky top-0 z-20">
         <h1 className="text-lg font-black text-gray-900">내 프로필</h1>
-        <button onClick={handleLogout} className="text-sm text-gray-400 hover:text-gray-600">
-          로그아웃
-        </button>
+        <div className="flex items-center gap-3">
+          <Link href="/notifications" className="relative text-gray-400 hover:text-gray-600">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+            </svg>
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </Link>
+          <button onClick={handleLogout} className="text-sm text-gray-400 hover:text-gray-600">
+            로그아웃
+          </button>
+        </div>
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-4 space-y-4">
@@ -268,6 +311,46 @@ export default function ProfilePage() {
             <div className="h-full bg-gradient-to-r from-blue-400 via-green-400 to-orange-500 rounded-full" style={{ width: `${mannerTemperature}%` }} />
           </div>
           <p className="text-xs text-gray-400 mt-2">활동을 통해 매너온도가 올라가요 🌡️</p>
+        </div>
+
+        {/* 내가 올린 공고 */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="font-bold text-gray-900">내가 올린 공고</h2>
+            <Link href="/gigs/create" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+              + 새 공고
+            </Link>
+          </div>
+          {myGigs.length === 0 ? (
+            <p className="text-sm text-gray-400 text-center py-4">아직 올린 공고가 없어요</p>
+          ) : (
+            <div className="space-y-2">
+              {myGigs.map(gig => (
+                <Link key={gig.id} href={`/gigs/${gig.id}`} className="block p-3 rounded-xl border border-gray-100 hover:border-indigo-200 transition-colors">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          gig.gig_type === 'hiring' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
+                        }`}>
+                          {gig.gig_type === 'hiring' ? '구인' : '구직'}
+                        </span>
+                        <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          gig.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+                        }`}>
+                          {gig.status === 'active' ? '진행중' : gig.status === 'closed' ? '마감' : gig.status === 'expired' ? '만료' : '일시중지'}
+                        </span>
+                      </div>
+                      <p className="text-sm font-medium text-gray-900 truncate">{gig.title}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        👁 {gig.view_count} · {new Date(gig.created_at).toLocaleDateString('ko-KR')}
+                      </p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
 
         <Button onClick={handleSave} size="full" isLoading={loading} className="bg-indigo-600 hover:bg-indigo-700">
