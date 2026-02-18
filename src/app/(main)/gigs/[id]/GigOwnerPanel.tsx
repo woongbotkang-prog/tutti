@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 interface Applicant {
@@ -183,6 +184,11 @@ export default function GigOwnerPanel({ gigId, applications: initialApps }: GigO
       {/* 공고 관리 */}
       <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
         <h3 className="font-bold text-gray-900 mb-3">공고 관리</h3>
+        <Link href={`/gigs/${gigId}/edit`}>
+          <button className="w-full py-3 text-sm font-bold rounded-xl border-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors mb-3">
+            공고 수정하기
+          </button>
+        </Link>
         {!showDeleteConfirm ? (
           <button
             onClick={() => setShowDeleteConfirm(true)}

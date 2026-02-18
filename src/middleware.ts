@@ -12,7 +12,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/profile') ||
     pathname.startsWith('/chat') ||
     pathname === '/gigs/new' ||
-    pathname.includes('/apply');
+    pathname.includes('/apply') ||
+    pathname.match(/\/gigs\/.*\/edit/);
 
   if (isProtectedRoute) {
     // updateSession에서 이미 쿠키를 갱신했으므로 최신 쿠키로 유저 확인

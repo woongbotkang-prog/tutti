@@ -21,7 +21,8 @@ export default async function ApplicationsPage() {
       gig:gigs(id, title, gig_type, status,
         author:user_profiles!gigs_user_id_fkey(display_name),
         region:regions(name)
-      )
+      ),
+      chat_room:chat_rooms(id)
     `)
     .eq('applicant_id', user.id)
     .order('applied_at', { ascending: false })
@@ -42,25 +43,36 @@ export default async function ApplicationsPage() {
         ) : (
           applications.map(app => {
             const gig = app.gig as unknown as { id: string; title: string; gig_type: string; author: { display_name: string } | null; region: { name: string } | null } | null
+            const chatRoom = app.chat_room as unknown as { id: string }[] | null
+            const chatRoomId = chatRoom?.[0]?.id
             const status = STATUS_LABELS[app.status] ?? STATUS_LABELS.pending
             return (
-              <Link key={app.id} href={`/gigs/${gig?.id}`}>
-                <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all">
-                  <div className="flex items-start justify-between mb-2">
-                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${status.color}`}>
-                      {status.label}
-                    </span>
-                    <span className="text-xs text-gray-400">
-                      {new Date(app.applied_at).toLocaleDateString('ko-KR')}
-                    </span>
+              <div key={app.id}>
+                <Link href={`/gigs/${gig?.id}`}>
+                  <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md transition-all">
+                    <div className="flex items-start justify-between mb-2">
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${status.color}`}>
+                        {status.label}
+                      </span>
+                      <span className="text-xs text-gray-400">
+                        {new Date(app.applied_at).toLocaleDateString('ko-KR')}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-gray-900 mb-1">{gig?.title}</h3>
+                    <p className="text-xs text-gray-500">
+                      {gig?.author?.display_name}
+                      {gig?.region?.name && ` · ${gig.region.name}`}
+                    </p>
                   </div>
-                  <h3 className="font-bold text-gray-900 mb-1">{gig?.title}</h3>
-                  <p className="text-xs text-gray-500">
-                    {gig?.author?.display_name}
-                    {gig?.region?.name && ` · ${gig.region.name}`}
-                  </p>
-                </div>
-              </Link>
+                </Link>
+                {app.status === 'accepted' && chatRoomId && (
+                  <Link href={`/chat/${chatRoomId}`}>
+                    <div className="mt-1 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5 text-sm font-medium text-indigo-600 hover:bg-indigo-100 transition-colors text-center">
+                      💬 채팅 바로가기
+                    </div>
+                  </Link>
+                )}
+              </div>
             )
           })
         )}
