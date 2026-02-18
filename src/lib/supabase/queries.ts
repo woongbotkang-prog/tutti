@@ -111,7 +111,10 @@ export async function fetchGigs({
   query = query.range(page * limit, (page + 1) * limit - 1)
 
   const { data, error } = await query
-  if (error) throw error
+  if (error) {
+    console.error('Supabase gigs query error:', error)
+    throw error
+  }
 
   const result = (data ?? []) as unknown as GigListItem[]
   return { data: result, hasMore: result.length === limit }

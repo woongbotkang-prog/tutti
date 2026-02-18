@@ -164,6 +164,7 @@ export default function GigsPage() {
       setHasMore(result.hasMore)
       setPage(0)
     } catch (e) {
+      console.error('fetchGigs error:', e)
       setError('공고를 불러오는 데 실패했습니다.')
     } finally {
       setLoading(false)
@@ -366,14 +367,26 @@ export default function GigsPage() {
         {!loading && !error && gigs.length === 0 && (
           <div className="text-center py-16 text-gray-400">
             <p className="text-4xl mb-3">🎵</p>
-            <p className="text-sm font-medium text-gray-500">해당하는 공고가 없어요</p>
-            {isFiltered && (
-              <button
-                onClick={resetFilters}
-                className="mt-3 text-xs text-indigo-600 underline underline-offset-2"
-              >
-                필터 초기화
-              </button>
+            {isFiltered ? (
+              <>
+                <p className="text-sm font-medium text-gray-500">해당하는 공고가 없어요</p>
+                <button
+                  onClick={resetFilters}
+                  className="mt-3 text-xs text-indigo-600 underline underline-offset-2"
+                >
+                  필터 초기화
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-medium text-gray-500">아직 공고가 없어요</p>
+                <p className="text-xs text-gray-400 mt-1">첫 번째 공고를 올려보세요!</p>
+                <Link href="/gigs/new">
+                  <Button size="sm" className="mt-4 bg-indigo-600 hover:bg-indigo-700">
+                    공고 올리기
+                  </Button>
+                </Link>
+              </>
             )}
           </div>
         )}
