@@ -165,6 +165,7 @@ export default function GigsPage() {
         sortBy,
         page: 0,
         limit: PAGE_SIZE,
+        includeExpired: true,
       })
       setGigs(result.data)
       setHasMore(result.hasMore)
@@ -191,6 +192,7 @@ export default function GigsPage() {
         sortBy,
         page: nextPage,
         limit: PAGE_SIZE,
+        includeExpired: true,
       })
       setGigs(prev => [...prev, ...result.data])
       setHasMore(result.hasMore)

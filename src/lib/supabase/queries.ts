@@ -15,6 +15,7 @@ export interface FetchGigsParams {
   sortBy?: SortOption
   page?: number
   limit?: number
+  includeExpired?: boolean
 }
 
 export interface GigListItem {
@@ -46,6 +47,7 @@ export async function fetchGigs({
   sortBy = 'latest',
   page = 0,
   limit = 10,
+  includeExpired = false,
 }: FetchGigsParams = {}): Promise<FetchGigsResult> {
   const supabase = createClient()
 
@@ -91,7 +93,7 @@ export async function fetchGigs({
         instrument:instruments(name)
       )
     `)
-    .eq('status', 'active')
+    .in('status', includeExpired ? ['active', 'closed', 'expired'] : ['active'])
 
   if (gigType) query = query.eq('gig_type', gigType)
   if (regionId) query = query.eq('region_id', regionId)

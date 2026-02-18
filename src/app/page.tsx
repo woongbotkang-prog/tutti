@@ -72,14 +72,14 @@ export default async function HomePage() {
       </section>
 
       {/* 최신 공고 */}
-      {latestGigs && latestGigs.length > 0 && (
-        <section className="max-w-lg mx-auto px-6 pb-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-bold text-gray-900">최신 공고</h2>
-            <Link href="/gigs" className="text-xs text-indigo-600 font-medium">
-              전체 보기 →
-            </Link>
-          </div>
+      <section className="max-w-lg mx-auto px-6 pb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-bold text-gray-900">최신 공고</h2>
+          <Link href="/gigs" className="text-xs text-indigo-600 font-medium">
+            전체 보기 →
+          </Link>
+        </div>
+        {latestGigs && latestGigs.length > 0 ? (
           <div className="space-y-2.5">
             {latestGigs.map((gig: any) => (
               <Link key={gig.id} href={`/gigs/${gig.id}`}>
@@ -99,8 +99,14 @@ export default async function HomePage() {
               </Link>
             ))}
           </div>
-        </section>
-      )}
+        ) : (
+          <div className="bg-white rounded-2xl border border-gray-100 p-8 shadow-sm text-center">
+            <span className="text-4xl mb-3 block">🎵</span>
+            <p className="text-sm text-gray-500">아직 공고가 없어요.</p>
+            <p className="text-sm text-gray-400 mt-1">첫 번째 공고를 올려보세요!</p>
+          </div>
+        )}
+      </section>
 
       {/* 빠른 바로가기 */}
       <section className="max-w-lg mx-auto px-6 pb-6">
