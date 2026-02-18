@@ -54,7 +54,7 @@ export default function GigOwnerPanel({ gigId, applications: initialApps }: GigO
     }
   }
 
-  const handleRespond = async (applicationId: string, status: 'accepted' | 'rejected') => {
+  const handleRespond = async (applicationId: string, applicantId: string, status: 'accepted' | 'rejected') => {
     setRespondingId(applicationId)
     try {
       const { error } = await supabase
@@ -66,6 +66,40 @@ export default function GigOwnerPanel({ gigId, applications: initialApps }: GigO
         .eq('id', applicationId)
 
       if (error) throw error
+
+      // 수락 시 채팅방 자동 생성
+      if (status === 'accepted') {
+        // 현재 로그인 유저 (공고 작성자)
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          // 중복 방지: 이미 이 application에 대한 채팅방이 있는지 확인
+          const { data: existingRoom } = await supabase
+            .from('chat_rooms')
+            .select('id')
+            .eq('application_id', applicationId)
+            .maybeSingle()
+
+          if (!existingRoom) {
+            // 채팅방 생성
+            const { data: newRoom, error: roomError } = await supabase
+              .from('chat_rooms')
+              .insert({
+                application_id: applicationId,
+                room_type: 'direct',
+              })
+              .select('id')
+              .single()
+
+            if (!roomError && newRoom) {
+              // 참여자 추가 (작성자 + 지원자)
+              await supabase.from('chat_participants').insert([
+                { room_id: newRoom.id, user_id: user.id },
+                { room_id: newRoom.id, user_id: applicantId },
+              ])
+            }
+          }
+        }
+      }
 
       setApplications(prev =>
         prev.map(app => app.id === applicationId ? { ...app, status } : app)
@@ -124,14 +158,14 @@ export default function GigOwnerPanel({ gigId, applications: initialApps }: GigO
                   {isPending && (
                     <div className="flex gap-2">
                       <button
-                        onClick={() => handleRespond(app.id, 'accepted')}
+                        onClick={() => handleRespond(app.id, app.applicant?.id ?? '', 'accepted')}
                         disabled={isResponding}
                         className="flex-1 py-2 text-sm font-bold rounded-xl bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 transition-colors"
                       >
                         수락
                       </button>
                       <button
-                        onClick={() => handleRespond(app.id, 'rejected')}
+                        onClick={() => handleRespond(app.id, app.applicant?.id ?? '', 'rejected')}
                         disabled={isResponding}
                         className="flex-1 py-2 text-sm font-bold rounded-xl bg-gray-200 text-gray-600 hover:bg-gray-300 disabled:opacity-50 transition-colors"
                       >
