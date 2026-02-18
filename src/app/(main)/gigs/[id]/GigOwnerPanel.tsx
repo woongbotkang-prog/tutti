@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -39,6 +39,28 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
   const [deleting, setDeleting] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [respondingId, setRespondingId] = useState<string | null>(null)
+
+  // 기존 수락된 지원의 채팅방 ID를 조회
+  useEffect(() => {
+    const acceptedApps = applications.filter(app => app.status === 'accepted')
+    if (acceptedApps.length === 0) return
+
+    const fetchChatRooms = async () => {
+      const { data } = await supabase
+        .from('chat_rooms')
+        .select('id, application_id')
+        .in('application_id', acceptedApps.map(app => app.id))
+
+      if (data && data.length > 0) {
+        const roomMap: Record<string, string> = {}
+        data.forEach((room: { id: string; application_id: string }) => {
+          roomMap[room.application_id] = room.id
+        })
+        setChatRoomIds(prev => ({ ...prev, ...roomMap }))
+      }
+    }
+    fetchChatRooms()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDelete = async () => {
     setDeleting(true)

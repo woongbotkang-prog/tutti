@@ -95,6 +95,11 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-4 space-y-4">
+        {(gig.status === 'closed' || gig.status === 'expired' || (gig.expires_at && new Date(gig.expires_at) < new Date())) && (
+          <div className="bg-gray-100 border border-gray-200 rounded-2xl p-3 text-center">
+            <p className="text-sm text-gray-500 font-medium">마감된 공고입니다</p>
+          </div>
+        )}
         {searchParams.applied === '1' && (
           <div className="rounded-2xl bg-green-50 border border-green-200 p-4 text-sm text-green-700 font-medium">
             ✅ 지원이 완료되었습니다! 결과는 알림으로 안내드릴게요.
