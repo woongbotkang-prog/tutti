@@ -49,8 +49,8 @@
       "permanent": true
     },
     {
-      "source": "/signup",
-      "destination": "/register",
+      "source": "/register",
+      "destination": "/signup",
       "permanent": true
     }
   ],
