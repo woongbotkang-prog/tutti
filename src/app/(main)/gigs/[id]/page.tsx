@@ -165,7 +165,7 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
 
         {/* 작성자 관리 패널 */}
         {isOwner && (
-          <GigOwnerPanel gigId={gig.id} applications={applications} />
+          <GigOwnerPanel gigId={gig.id} gigTitle={gig.title} applications={applications} />
         )}
       </main>
 

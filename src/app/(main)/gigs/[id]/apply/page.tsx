@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { applyToGig } from '@/lib/supabase/queries'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 
 export default function ApplyPage({ params }: { params: { id: string } }) {
@@ -17,6 +18,30 @@ export default function ApplyPage({ params }: { params: { id: string } }) {
     setError(null)
     try {
       await applyToGig(params.id, message)
+
+      // 공고 작성자에게 알림 생성
+      try {
+        const supabase = createClient()
+        const { data: gig } = await supabase
+          .from('gigs')
+          .select('user_id, title')
+          .eq('id', params.id)
+          .single()
+
+        if (gig) {
+          await supabase.from('notifications').insert({
+            user_id: gig.user_id,
+            type: 'application_received',
+            title: '새 지원이 도착했습니다',
+            body: `${gig.title} 공고에 새 지원자가 있습니다.`,
+            data: { gig_id: params.id },
+            is_read: false,
+          })
+        }
+      } catch {
+        // 알림 생성 실패해도 지원 자체는 성공
+      }
+
       router.push(`/gigs/${params.id}?applied=1`)
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : '지원 중 오류가 발생했습니다.')

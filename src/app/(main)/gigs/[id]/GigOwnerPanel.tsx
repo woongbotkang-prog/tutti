@@ -21,6 +21,7 @@ interface Applicant {
 
 interface GigOwnerPanelProps {
   gigId: string
+  gigTitle: string
   applications: Applicant[]
 }
 
@@ -30,7 +31,7 @@ const STATUS_LABELS: Record<string, { label: string; color: string }> = {
   rejected: { label: '거절됨', color: 'bg-red-100 text-red-700' },
 }
 
-export default function GigOwnerPanel({ gigId, applications: initialApps }: GigOwnerPanelProps) {
+export default function GigOwnerPanel({ gigId, gigTitle, applications: initialApps }: GigOwnerPanelProps) {
   const router = useRouter()
   const supabase = createClient()
   const [applications, setApplications] = useState(initialApps)
@@ -67,6 +68,20 @@ export default function GigOwnerPanel({ gigId, applications: initialApps }: GigO
         .eq('id', applicationId)
 
       if (error) throw error
+
+      // 알림 생성 (지원자에게)
+      if (applicantId) {
+        await supabase.from('notifications').insert({
+          user_id: applicantId,
+          type: status === 'accepted' ? 'application_accepted' : 'application_rejected',
+          title: status === 'accepted' ? '지원이 수락되었습니다' : '지원 결과 안내',
+          body: status === 'accepted'
+            ? `${gigTitle} 공고에 합격했습니다!`
+            : `${gigTitle} 공고 지원 결과를 확인해주세요.`,
+          data: { gig_id: gigId },
+          is_read: false,
+        })
+      }
 
       // 수락 시 채팅방 자동 생성
       if (status === 'accepted') {
