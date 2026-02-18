@@ -249,8 +249,10 @@ export default function SignUpPage() {
               required
             />
             <span className="text-xs text-gray-500 leading-relaxed">
+              <Link href="/terms" className="text-indigo-600 underline" target="_blank">이용약관</Link>
+              {' 및 '}
               <Link href="/privacy" className="text-indigo-600 underline" target="_blank">개인정보처리방침</Link>
-              을 읽었으며 이에 동의합니다. (필수)
+              에 동의합니다. (필수)
             </span>
           </label>
 

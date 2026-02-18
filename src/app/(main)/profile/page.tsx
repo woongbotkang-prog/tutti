@@ -183,8 +183,14 @@ export default function ProfilePage() {
         await supabase.from('user_instruments').delete().eq('user_id', user.id)
         await supabase.from('profiles').delete().eq('id', user.id)
       }
+      // auth.users에서도 완전 삭제 (서버사이드)
+      const res = await fetch('/api/auth/delete-account', { method: 'POST' })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || '계정 삭제 실패')
+      }
       await supabase.auth.signOut()
-      router.push('/login')
+      router.push('/')
       router.refresh()
     } catch (e) {
       console.error('탈퇴 실패:', e)
@@ -397,7 +403,10 @@ export default function ProfilePage() {
         </div>
 
         {/* 개인정보처리방침 링크 */}
-        <div className="text-center pb-4">
+        <div className="text-center pb-4 space-x-3">
+          <Link href="/terms" className="text-xs text-gray-400 hover:text-gray-600 underline">
+            이용약관
+          </Link>
           <Link href="/privacy" className="text-xs text-gray-400 hover:text-gray-600 underline">
             개인정보처리방침
           </Link>
