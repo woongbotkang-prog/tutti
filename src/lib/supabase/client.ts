@@ -15,8 +15,5 @@ export function createClient() {
     throw new Error('Missing NEXT_PUBLIC_SUPABASE_ANON_KEY');
   }
 
-  console.log('Supabase URL:', supabaseUrl);
-  console.log('Supabase Anon Key prefix:', supabaseAnonKey.substring(0, 20));
-
   return createBrowserClient(supabaseUrl, supabaseAnonKey);
 }

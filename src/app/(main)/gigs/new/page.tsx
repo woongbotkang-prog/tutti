@@ -25,7 +25,7 @@ export default function NewGigPage() {
   const [gigType, setGigType] = useState<GigType>('hiring')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [selectedInstruments, setSelectedInstruments] = useState<string[]>([])
+  const [selectedInstruments, setSelectedInstruments] = useState<Record<string, number>>({})
   const [selectedRegion, setSelectedRegion] = useState('')
   const [minLevel, setMinLevel] = useState<SkillLevel>('beginner')
   const [isPaid, setIsPaid] = useState(false)
@@ -38,13 +38,23 @@ export default function NewGigPage() {
   const [pieceName, setPieceName] = useState('')
 
   const toggleInstrument = (i: string) =>
-    setSelectedInstruments(p => p.includes(i) ? p.filter(x => x !== i) : [...p, i])
+    setSelectedInstruments(p => {
+      if (i in p) {
+        const next = { ...p }
+        delete next[i]
+        return next
+      }
+      return { ...p, [i]: 1 }
+    })
+
+  const setInstrumentCount = (i: string, count: number) =>
+    setSelectedInstruments(p => ({ ...p, [i]: Math.max(1, Math.min(50, count)) }))
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (isLoading) return
     if (!title.trim()) return setError('제목을 입력해 주세요.')
-    if (selectedInstruments.length === 0) return setError('악기를 하나 이상 선택해 주세요.')
+    if (Object.keys(selectedInstruments).length === 0) return setError('악기를 하나 이상 선택해 주세요.')
     if (!selectedRegion) return setError('지역을 선택해 주세요.')
 
     setIsLoading(true)
@@ -72,7 +82,7 @@ export default function NewGigPage() {
         is_paid: isPaid,
         is_project: isProject,
         piece_name: isProject && pieceName.trim() ? pieceName.trim() : null,
-        max_applicants: parseInt(maxApplicants) || 1,
+        max_applicants: Object.values(selectedInstruments).reduce((sum, n) => sum + n, 0) || parseInt(maxApplicants) || 1,
         event_date: eventDate || null,
         status: 'active',
         expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
@@ -86,19 +96,20 @@ export default function NewGigPage() {
       return
     }
 
-    // 악기 연결
-    if (gig && selectedInstruments.length > 0) {
+    // 악기 연결 (파트별 인원수 반영)
+    const instrumentNames = Object.keys(selectedInstruments)
+    if (gig && instrumentNames.length > 0) {
       const { data: instrumentData } = await supabase
         .from('instruments')
         .select('id, name')
-        .in('name', selectedInstruments)
+        .in('name', instrumentNames)
 
       if (instrumentData && instrumentData.length > 0) {
         await supabase.from('gig_instruments').insert(
           instrumentData.map(inst => ({
             gig_id: gig.id,
             instrument_id: inst.id,
-            count_needed: 1,
+            count_needed: selectedInstruments[inst.name] || 1,
           }))
         )
       }
@@ -129,7 +140,7 @@ export default function NewGigPage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <h2 className="font-bold text-gray-900 mb-3">공고 유형</h2>
           <div className="grid grid-cols-2 gap-3">
-            {([['hiring', '단원 모집', '단원/연주자를 찾고 있어요'], ['seeking', '팀 찾기', '합류할 팀/오케스트라를 찾아요']] as const).map(([val, label, desc]) => (
+            {([['hiring', '단원 모집', '단원 모집합니다! 연주자를 찾고 있어요'], ['seeking', '팀 찾기', '합류할 팀을 직접 찾을게요']] as const).map(([val, label, desc]) => (
               <button
                 key={val}
                 type="button"
@@ -139,7 +150,7 @@ export default function NewGigPage() {
                 }`}
               >
                 <p className={`font-bold text-sm ${gigType === val ? 'text-indigo-700' : 'text-gray-900'}`}>{label}</p>
-                <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+                <p className={`text-xs mt-0.5 ${gigType === val ? 'text-indigo-600' : 'text-gray-500'}`}>{desc}</p>
               </button>
             ))}
           </div>
@@ -160,7 +171,7 @@ export default function NewGigPage() {
                 <p className={`text-sm font-bold ${isProject ? 'text-purple-700' : 'text-gray-700'}`}>
                   곡 기반 프로젝트 모집
                 </p>
-                <p className="text-xs text-gray-400">특정 곡을 함께 연주할 사람을 찾아요</p>
+                <p className="text-xs text-gray-400">내가 하고 싶은 곡으로 팀을 만들어요</p>
               </div>
             </div>
             <div className={`w-12 h-6 rounded-full transition-colors flex items-center ${isProject ? 'bg-purple-500' : 'bg-gray-200'}`}>
@@ -201,9 +212,10 @@ export default function NewGigPage() {
           </div>
         </div>
 
-        {/* 악기 */}
+        {/* 악기 + 파트별 인원 */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-          <h2 className="font-bold text-gray-900 mb-3">악기 <span className="text-red-500">*</span></h2>
+          <h2 className="font-bold text-gray-900 mb-1">악기 <span className="text-red-500">*</span></h2>
+          <p className="text-xs text-gray-400 mb-3">악기를 선택하면 파트별 모집 인원을 설정할 수 있어요</p>
           <div className="flex flex-wrap gap-2">
             {INSTRUMENTS.map(inst => (
               <button
@@ -211,7 +223,7 @@ export default function NewGigPage() {
                 type="button"
                 onClick={() => toggleInstrument(inst)}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                  selectedInstruments.includes(inst)
+                  inst in selectedInstruments
                     ? 'bg-indigo-600 text-white border-indigo-600'
                     : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
                 }`}
@@ -220,6 +232,36 @@ export default function NewGigPage() {
               </button>
             ))}
           </div>
+
+          {/* 선택된 악기별 인원 설정 */}
+          {Object.keys(selectedInstruments).length > 0 && (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs font-medium text-gray-500">파트별 모집 인원</p>
+              {Object.entries(selectedInstruments).map(([inst, count]) => (
+                <div key={inst} className="flex items-center justify-between py-2 px-3 bg-indigo-50 rounded-xl">
+                  <span className="text-sm font-medium text-indigo-700">{inst}</span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setInstrumentCount(inst, count - 1)}
+                      className="w-7 h-7 rounded-full bg-white border border-indigo-200 text-indigo-600 font-bold text-sm flex items-center justify-center"
+                    >
+                      -
+                    </button>
+                    <span className="text-sm font-bold text-indigo-700 w-6 text-center">{count}</span>
+                    <button
+                      type="button"
+                      onClick={() => setInstrumentCount(inst, count + 1)}
+                      className="w-7 h-7 rounded-full bg-white border border-indigo-200 text-indigo-600 font-bold text-sm flex items-center justify-center"
+                    >
+                      +
+                    </button>
+                    <span className="text-xs text-gray-400">명</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* 조건 */}
@@ -277,15 +319,23 @@ export default function NewGigPage() {
               <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5 ${isPaid ? 'translate-x-6' : ''}`} />
             </button>
           </div>
-          <Input
-            type="number"
-            label="모집 인원"
-            placeholder="1"
-            value={maxApplicants}
-            onChange={e => setMaxApplicants(e.target.value)}
-            min="1"
-            max="50"
-          />
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1.5">모집 인원</label>
+            {Object.keys(selectedInstruments).length > 0 ? (
+              <p className="text-sm text-indigo-600 font-bold bg-indigo-50 rounded-xl px-4 py-2.5">
+                파트별 합계: {Object.values(selectedInstruments).reduce((sum, n) => sum + n, 0)}명
+              </p>
+            ) : (
+              <Input
+                type="number"
+                placeholder="1"
+                value={maxApplicants}
+                onChange={e => setMaxApplicants(e.target.value)}
+                min="1"
+                max="50"
+              />
+            )}
+          </div>
           <Input
             type="date"
             label="연주 날짜 (선택)"

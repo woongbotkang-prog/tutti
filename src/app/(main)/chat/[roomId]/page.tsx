@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -17,7 +17,8 @@ interface Message {
 
 export default function ChatRoomPage({ params }: { params: { roomId: string } }) {
   const router = useRouter()
-  const supabase = createClient()
+  // 중요: supabase 인스턴스를 useMemo로 안정화하여 Realtime 연결이 끊기지 않게 함
+  const supabase = useMemo(() => createClient(), [])
   const { roomId } = params
 
   const [messages, setMessages] = useState<Message[]>([])
@@ -27,6 +28,7 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
   const [sending, setSending] = useState(false)
   const [otherUserName, setOtherUserName] = useState('')
   const [gigTitle, setGigTitle] = useState('')
+  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting')
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const channelRef = useRef<RealtimeChannel | null>(null)
@@ -66,9 +68,7 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
 
       // 2. Realtime 구독 먼저 설정 (메시지 누락 방지)
       const channel = supabase
-        .channel(`room:${roomId}`, {
-          config: { broadcast: { self: true } },
-        })
+        .channel(`room:${roomId}`)
         .on('postgres_changes', {
           event: 'INSERT',
           schema: 'public',
@@ -104,7 +104,16 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
             markAsRead(user.id)
           }
         })
-        .subscribe()
+        .subscribe((status) => {
+          if (!mounted) return
+          if (status === 'SUBSCRIBED') {
+            setConnectionStatus('connected')
+          } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+            setConnectionStatus('disconnected')
+          } else {
+            setConnectionStatus('connecting')
+          }
+        })
 
       channelRef.current = channel
 
@@ -168,11 +177,18 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
         channelRef.current = null
       }
     }
-  }, [roomId]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [roomId, supabase]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // 메시지 전송
   const handleSend = async () => {
     if (!newMessage.trim() || sending || !userId) return
+
+    // 메시지 길이 제한 (5000자)
+    if (newMessage.length > 5000) {
+      alert('메시지는 5000자까지 입력할 수 있습니다.')
+      return
+    }
+
     setSending(true)
     const content = newMessage.trim()
     setNewMessage('')
@@ -212,8 +228,26 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
-      <div className="animate-spin w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
+    <div className="flex flex-col h-screen bg-gray-50">
+      <header className="bg-white px-4 py-4 flex items-center gap-3 border-b border-gray-100 shrink-0">
+        <Link href="/chat">
+          <button className="text-gray-500 hover:text-gray-700" aria-label="채팅 목록으로">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+          </button>
+        </Link>
+        <div className="h-5 w-24 bg-gray-200 rounded animate-pulse" />
+      </header>
+      <div className="flex-1 px-4 py-4 space-y-3">
+        {[1, 2, 3].map(i => (
+          <div key={i} className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
+            <div className={`rounded-2xl px-4 py-3 ${i % 2 === 0 ? 'bg-indigo-100' : 'bg-gray-100'} animate-pulse`}>
+              <div className="h-4 w-32 rounded" />
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   )
 
@@ -222,20 +256,42 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
       {/* 헤더 */}
       <header className="bg-white px-4 py-4 flex items-center gap-3 border-b border-gray-100 shrink-0">
         <Link href="/chat">
-          <button className="text-gray-500 hover:text-gray-700">
+          <button className="text-gray-500 hover:text-gray-700" aria-label="채팅 목록으로">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M19 12H5M12 19l-7-7 7-7"/>
             </svg>
           </button>
         </Link>
-        <div>
+        <div className="flex-1">
           <h1 className="font-bold text-gray-900">{otherUserName || '채팅'}</h1>
           {gigTitle && <p className="text-xs text-gray-400 truncate max-w-[200px]">{gigTitle}</p>}
         </div>
+        {connectionStatus !== 'connected' && (
+          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+            connectionStatus === 'connecting' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+          }`}>
+            {connectionStatus === 'connecting' ? '연결 중...' : '연결 끊김'}
+          </span>
+        )}
       </header>
 
+      {/* 연결 끊김 배너 */}
+      {connectionStatus === 'disconnected' && (
+        <div className="bg-red-50 border-b border-red-200 px-4 py-2 text-center">
+          <p className="text-xs text-red-600">
+            실시간 연결이 끊겼습니다. 새로고침하면 다시 연결됩니다.
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="text-xs font-bold text-red-700 underline mt-1"
+          >
+            새로고침
+          </button>
+        </div>
+      )}
+
       {/* 메시지 영역 */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3" role="log" aria-live="polite">
         {messages.length === 0 && (
           <div className="text-center py-8 text-gray-400 text-sm">
             첫 번째 메시지를 보내보세요!
@@ -247,7 +303,7 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
             <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
                 isMine ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white text-gray-900 rounded-bl-sm shadow-sm'
-              }`}>
+              } ${msg.id.startsWith('temp-') ? 'opacity-70' : ''}`}>
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                 <p className={`text-xs mt-1 ${isMine ? 'text-indigo-200' : 'text-gray-400'}`}>
                   {new Date(msg.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
@@ -259,21 +315,25 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
         <div ref={bottomRef} />
       </div>
 
-      {/* 입력창 */}
-      <div className="border-t border-gray-100 px-4 py-3 bg-white shrink-0">
-        <div className="flex items-end gap-2">
+      {/* 입력창 — shrink-0 + 고정 패딩으로 흔들림 방지 */}
+      <div className="border-t border-gray-100 px-4 py-3 bg-white shrink-0" style={{ minHeight: '60px' }}>
+        <div className="flex items-end gap-2 max-w-lg mx-auto">
           <textarea
             value={newMessage}
             onChange={e => setNewMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="메시지를 입력하세요..."
             rows={1}
-            className="flex-1 rounded-2xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-400 resize-none max-h-32"
+            maxLength={5000}
+            className="flex-1 rounded-2xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-400 resize-none overflow-hidden leading-5"
+            style={{ maxHeight: '128px', minHeight: '40px' }}
+            aria-label="메시지 입력"
           />
           <button
             onClick={handleSend}
             disabled={!newMessage.trim() || sending}
-            className="w-10 h-10 rounded-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 flex items-center justify-center transition-colors shrink-0"
+            className="w-10 h-10 rounded-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 flex items-center justify-center transition-colors shrink-0 mb-0"
+            aria-label="메시지 전송"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">
               <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/>

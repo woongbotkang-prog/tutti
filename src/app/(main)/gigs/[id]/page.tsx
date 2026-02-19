@@ -64,6 +64,7 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
   }
 
   // 작성자인 경우 지원자 목록 조회
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let applications: any[] = []
   if (isOwner) {
     const { data: apps } = await supabase
@@ -82,7 +83,7 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
 
   return (
     <div className="min-h-screen bg-gray-50 pb-28">
-      {/* 헤더 */}
+      {/* 헤더 — TUTTI 로고 + 뒤로가기 */}
       <header className="bg-white px-4 py-4 flex items-center gap-3 border-b border-gray-100 sticky top-0 z-20">
         <Link href="/gigs">
           <button className="text-gray-500 hover:text-gray-700">
@@ -91,7 +92,10 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
             </svg>
           </button>
         </Link>
-        <h1 className="font-bold text-gray-900 flex-1 truncate">{gig.title}</h1>
+        <Link href="/" className="shrink-0">
+          <span className="text-lg font-black text-indigo-600 tracking-tight">TUTTI</span>
+        </Link>
+        <h1 className="font-bold text-gray-900 flex-1 truncate text-sm">{gig.title}</h1>
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-4 space-y-4">
@@ -108,11 +112,15 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
         {/* 기본 정보 카드 */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
-            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-              gig.gig_type === 'hiring' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
-            }`}>
-              {gig.gig_type === 'hiring' ? '구인' : '구직'}
-            </span>
+            {gig.is_project ? (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">프로젝트</span>
+            ) : (
+              <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                gig.gig_type === 'hiring' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
+              }`}>
+                {gig.gig_type === 'hiring' ? '단원 모집' : '팀 찾기'}
+              </span>
+            )}
             {gig.is_paid ? (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">유급</span>
             ) : (
@@ -120,6 +128,11 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
             )}
           </div>
 
+          {gig.is_project && gig.piece_name && (
+            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl px-3 py-2 mb-2">
+              <p className="text-sm font-bold text-purple-700">🎼 {gig.piece_name}</p>
+            </div>
+          )}
           <h2 className="text-xl font-black text-gray-900 mb-1">{gig.title}</h2>
           {gig.author && (
             <p className="text-sm text-gray-600 font-medium mb-4">{gig.author.display_name}</p>
@@ -140,20 +153,42 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
           </div>
         </div>
 
-        {/* 모집 현황 */}
-        {gig.max_applicants && (
+        {/* 모집 현황 — 파트별 구분 */}
+        {(gig.max_applicants || (gig.instruments && gig.instruments.length > 0)) && (
           <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
             <h3 className="font-bold text-gray-900 mb-3">모집 현황</h3>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">{gig.current_applicants}명 지원 중</span>
-              <span className="text-sm font-bold text-indigo-600">{gig.max_applicants}명 모집</span>
-            </div>
-            <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-indigo-500 rounded-full transition-all"
-                style={{ width: `${Math.min((gig.current_applicants / gig.max_applicants) * 100, 100)}%` }}
-              />
-            </div>
+
+            {/* 파트별 모집 인원 */}
+            {gig.instruments && gig.instruments.length > 0 && (
+              <div className="space-y-2 mb-3">
+                {gig.instruments.map((gi: { id: string; instrument: { id: string; name: string } | null; count_needed: number; notes: string | null }) => (
+                  <div key={gi.id} className="flex items-center justify-between py-1.5 px-3 bg-gray-50 rounded-xl">
+                    <span className="text-sm font-medium text-gray-700">
+                      {gi.instrument?.name || '미지정'}
+                    </span>
+                    <span className="text-sm font-bold text-indigo-600">
+                      {gi.count_needed}명
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 전체 현황 바 */}
+            {gig.max_applicants && (
+              <>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs text-gray-500">{gig.current_applicants}명 지원 중</span>
+                  <span className="text-xs font-bold text-indigo-600">총 {gig.max_applicants}명 모집</span>
+                </div>
+                <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-indigo-500 rounded-full transition-all"
+                    style={{ width: `${Math.min((gig.current_applicants / gig.max_applicants) * 100, 100)}%` }}
+                  />
+                </div>
+              </>
+            )}
           </div>
         )}
 

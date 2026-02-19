@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Search, FileText, MessageCircle, Bell, User } from 'lucide-react'
+import { Home, Search, FileText, MessageCircle, Bell, User } from 'lucide-react'
 import { fetchUnreadNotificationCount, fetchUnreadChatCount } from '@/lib/supabase/queries'
 
 interface NavItem {
@@ -14,8 +14,8 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
+  { icon: Home,          label: '홈',       href: '/',              matchPrefix: '/' },
   { icon: Search,        label: '공고',     href: '/gigs',          matchPrefix: '/gigs' },
-  { icon: FileText,      label: '지원현황', href: '/applications',  matchPrefix: '/applications' },
   { icon: MessageCircle, label: '채팅',     href: '/chat',          matchPrefix: '/chat' },
   { icon: Bell,          label: '알림',     href: '/notifications', matchPrefix: '/notifications' },
   { icon: User,          label: '프로필',   href: '/profile',       matchPrefix: '/profile' },
@@ -34,8 +34,10 @@ function shouldHideNav(pathname: string): boolean {
 }
 
 function isActive(pathname: string, matchPrefix: string): boolean {
+  if (matchPrefix === '/') {
+    return pathname === '/'
+  }
   if (matchPrefix === '/gigs') {
-    // /gigs, /gigs/[id] 등 모두 매치하되 다른 탭에는 영향 없게
     return pathname === '/gigs' || pathname.startsWith('/gigs/')
   }
   if (matchPrefix === '/chat') {
@@ -75,7 +77,7 @@ export default function BottomNavBar() {
   if (shouldHideNav(pathname)) return null
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50 safe-area-inset-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50 safe-area-inset-bottom" role="navigation" aria-label="메인 메뉴">
       <div className="max-w-lg mx-auto flex">
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon
@@ -87,6 +89,8 @@ export default function BottomNavBar() {
             <Link
               key={item.href}
               href={item.href}
+              aria-label={item.label}
+              aria-current={active ? 'page' : undefined}
               className={`flex-1 flex flex-col items-center py-2.5 transition-colors ${
                 active ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'
               }`}

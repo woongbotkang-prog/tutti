@@ -158,6 +158,20 @@ export async function applyToGig(gigId: string, message?: string) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('로그인이 필요합니다.')
 
+  // 만료/마감된 공고 지원 차단
+  const { data: gig, error: gigError } = await supabase
+    .from('gigs')
+    .select('id, status, expires_at, user_id')
+    .eq('id', gigId)
+    .single()
+
+  if (gigError || !gig) throw new Error('공고를 찾을 수 없습니다.')
+  if (gig.user_id === user.id) throw new Error('자신의 공고에는 지원할 수 없습니다.')
+  if (gig.status !== 'active') throw new Error('마감된 공고에는 지원할 수 없습니다.')
+  if (gig.expires_at && new Date(gig.expires_at) < new Date()) {
+    throw new Error('마감 기한이 지난 공고입니다.')
+  }
+
   const { data, error } = await supabase
     .from('applications')
     .insert({
@@ -222,6 +236,23 @@ export async function respondToApplication(
   rejectionReasonText?: string
 ) {
   const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('로그인이 필요합니다.')
+
+  // 권한 검증: 해당 지원서의 공고 작성자인지 확인
+  const { data: application, error: fetchError } = await supabase
+    .from('applications')
+    .select('id, gig:gigs!applications_gig_id_fkey(user_id)')
+    .eq('id', applicationId)
+    .single()
+
+  if (fetchError || !application) throw new Error('지원서를 찾을 수 없습니다.')
+
+  const gig = application.gig as unknown as { user_id: string } | null
+  if (!gig || gig.user_id !== user.id) {
+    throw new Error('공고 작성자만 지원을 수락/거절할 수 있습니다.')
+  }
+
   const { data, error } = await supabase
     .from('applications')
     .update({
@@ -335,24 +366,26 @@ export async function fetchUnreadChatCount() {
 
   if (!participations || participations.length === 0) return 0
 
-  let total = 0
-  for (const p of participations) {
-    let query = supabase
-      .from('chat_messages')
-      .select('*', { count: 'exact', head: true })
-      .eq('room_id', p.room_id)
-      .eq('is_deleted', false)
-      .neq('sender_id', user.id)
+  // N+1 최적화: 병렬 쿼리로 전환
+  const counts = await Promise.all(
+    participations.map(async (p) => {
+      let query = supabase
+        .from('chat_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('room_id', p.room_id)
+        .eq('is_deleted', false)
+        .neq('sender_id', user.id)
 
-    if (p.last_read_at) {
-      query = query.gt('created_at', p.last_read_at)
-    }
+      if (p.last_read_at) {
+        query = query.gt('created_at', p.last_read_at)
+      }
 
-    const { count } = await query
-    total += count || 0
-  }
+      const { count } = await query
+      return count || 0
+    })
+  )
 
-  return total
+  return counts.reduce((sum, c) => sum + c, 0)
 }
 
 // ============================================================

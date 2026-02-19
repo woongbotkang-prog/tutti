@@ -70,15 +70,21 @@ function GigCard({ gig }: { gig: GigListItem }) {
       <div className={`bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all active:scale-[0.99] ${isExpired ? 'opacity-50' : ''}`}>
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span
-              className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                gig.gig_type === 'hiring'
-                  ? 'bg-indigo-100 text-indigo-700'
-                  : 'bg-emerald-100 text-emerald-700'
-              }`}
-            >
-              {gig.gig_type === 'hiring' ? '모집' : '팀 찾기'}
-            </span>
+            {gig.is_project ? (
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                프로젝트
+              </span>
+            ) : (
+              <span
+                className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                  gig.gig_type === 'hiring'
+                    ? 'bg-indigo-100 text-indigo-700'
+                    : 'bg-emerald-100 text-emerald-700'
+                }`}
+              >
+                {gig.gig_type === 'hiring' ? '단원 모집' : '팀 찾기'}
+              </span>
+            )}
             {gig.is_paid && (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
                 유급
@@ -233,9 +239,11 @@ export default function GigsPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
 
-      {/* 헤더 */}
+      {/* 헤더 — TUTTI 로고 + 공고 올리기 */}
       <header className="bg-white px-4 py-4 flex items-center justify-between sticky top-0 z-20 border-b border-gray-100">
-        <h1 className="text-lg font-black text-gray-900">공고</h1>
+        <Link href="/">
+          <span className="text-xl font-black text-indigo-600 tracking-tight">TUTTI</span>
+        </Link>
         <Link href="/gigs/new">
           <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">+ 공고 올리기</Button>
         </Link>
@@ -246,9 +254,9 @@ export default function GigsPage() {
         <div className="flex max-w-lg mx-auto">
           {[
             { key: 'all',     label: '전체' },
+            { key: 'project', label: '🎼 프로젝트' },
             { key: 'hiring',  label: '단원 모집' },
             { key: 'seeking', label: '팀 찾기' },
-            { key: 'project', label: '🎼 프로젝트' },
           ].map(tab => (
             <button
               key={tab.key}
@@ -275,7 +283,7 @@ export default function GigsPage() {
             type="text"
             value={searchInput}
             onChange={e => handleSearchChange(e.target.value)}
-            placeholder="공고 제목 검색..."
+            placeholder="곡명, 공고 제목으로 검색..."
             className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-400 focus:bg-white transition-colors"
           />
           {searchInput && (
@@ -289,8 +297,8 @@ export default function GigsPage() {
         </div>
       </div>
 
-      {/* 필터 + 정렬 */}
-      <div className="bg-white border-b border-gray-100 px-4 py-2 flex items-center gap-1.5 overflow-x-auto">
+      {/* 필터 + 정렬 — max-w-lg로 다른 UI와 폭 통일 */}
+      <div className="bg-white border-b border-gray-100 px-4 py-2 flex items-center gap-1.5 overflow-x-auto max-w-lg mx-auto">
         {/* 악기 선택 */}
         <select
           value={selectedInstrument}

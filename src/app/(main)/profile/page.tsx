@@ -382,13 +382,23 @@ export default function ProfilePage() {
         {/* 매너온도 */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="font-bold text-gray-900">매너온도</h2>
-            <span className="text-2xl font-black text-orange-500">{mannerTemperature.toFixed(1)}°</span>
+            <div className="flex items-center gap-2">
+              <h2 className="font-bold text-gray-900">매너온도</h2>
+              <div className="group relative">
+                <span className="text-gray-400 cursor-help text-sm">&#9432;</span>
+                <div className="invisible group-hover:visible absolute left-0 top-6 z-10 w-56 p-3 bg-gray-900 text-white text-xs rounded-xl shadow-lg">
+                  협업 매너를 나타내는 지표입니다. 성공적인 협업과 좋은 리뷰를 통해 올라갑니다. 기본값 36.5°에서 시작합니다.
+                </div>
+              </div>
+            </div>
+            <span className={`text-2xl font-black ${
+              mannerTemperature >= 40 ? 'text-orange-500' : mannerTemperature >= 37 ? 'text-green-500' : 'text-blue-500'
+            }`}>{mannerTemperature.toFixed(1)}°</span>
           </div>
           <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-blue-400 via-green-400 to-orange-500 rounded-full" style={{ width: `${mannerTemperature}%` }} />
+            <div className="h-full bg-gradient-to-r from-blue-400 via-green-400 to-orange-500 rounded-full transition-all" style={{ width: `${Math.min(mannerTemperature, 100)}%` }} />
           </div>
-          <p className="text-xs text-gray-400 mt-2">활동을 통해 매너온도가 올라가요 🌡️</p>
+          <p className="text-xs text-gray-400 mt-2">활동을 통해 매너온도가 올라가요</p>
         </div>
 
         {/* 내가 올린 공고 */}
@@ -409,9 +419,9 @@ export default function ProfilePage() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 mb-1">
                         <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          gig.gig_type === 'hiring' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
+                          gig.gig_type === 'hiring' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
                         }`}>
-                          {gig.gig_type === 'hiring' ? '모집' : '팀 찾기'}
+                          {gig.gig_type === 'hiring' ? '단원 모집' : '팀 찾기'}
                         </span>
                         <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
                           gig.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
