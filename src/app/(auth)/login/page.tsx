@@ -60,9 +60,13 @@ export default function LoginPage() {
 
   const handleKakaoLogin = async () => {
     try {
+      const redirectUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/auth/callback`
+        : 'http://localhost:3000/auth/callback'
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'kakao',
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: { redirectTo: redirectUrl },
       })
       if (error) throw error
     } catch {
@@ -72,9 +76,13 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     try {
+      const redirectUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/auth/callback`
+        : 'http://localhost:3000/auth/callback'
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: { redirectTo: redirectUrl },
       })
       if (error) throw error
     } catch {

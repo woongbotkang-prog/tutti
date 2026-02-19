@@ -65,6 +65,10 @@ export default function SignUpPage() {
 
     setIsLoading(true)
 
+    const redirectUrl = typeof window !== 'undefined' 
+      ? `${window.location.origin}/auth/callback`
+      : 'http://localhost:3000/auth/callback'
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -73,7 +77,7 @@ export default function SignUpPage() {
           user_type: userType,
           display_name: displayName.trim(),
         },
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: redirectUrl,
       },
     })
 
@@ -120,9 +124,13 @@ export default function SignUpPage() {
 
   const handleSocialLogin = async (provider: 'kakao' | 'google') => {
     try {
+      const redirectUrl = typeof window !== 'undefined'
+        ? `${window.location.origin}/auth/callback`
+        : 'http://localhost:3000/auth/callback'
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
+        options: { redirectTo: redirectUrl },
       })
       if (error) throw error
     } catch {
