@@ -7,9 +7,11 @@ import { createClient } from '@/lib/supabase/client'
 
 interface Message {
   id: string
+  room_id: string
   content: string
   sender_id: string
   created_at: string
+  is_deleted: boolean
 }
 
 export default function ChatRoomPage({ params }: { params: { roomId: string } }) {
@@ -112,13 +114,28 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
     const content = newMessage.trim()
     setNewMessage('')
 
+    // Optimistic update: 즉시 UI에 추가
+    const tempMessage: Message = {
+      id: `temp-${Date.now()}`,
+      room_id: params.roomId,
+      sender_id: userId,
+      content,
+      created_at: new Date().toISOString(),
+      is_deleted: false,
+    }
+    setMessages(prev => [...prev, tempMessage])
+
     const { error } = await supabase.from('chat_messages').insert({
       room_id: params.roomId,
       sender_id: userId,
       content,
     })
 
-    if (error) setNewMessage(content)
+    if (error) {
+      // 실패 시 롤백
+      setMessages(prev => prev.filter(m => m.id !== tempMessage.id))
+      setNewMessage(content)
+    }
     setSending(false)
   }
 
