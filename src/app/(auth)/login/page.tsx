@@ -22,10 +22,34 @@ export default function LoginPage() {
     setIsLoading(true)
     setError(null)
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
     if (error) {
-      setError('이메일 또는 비밀번호가 올바르지 않습니다.')
+      console.error('Login error:', error)
+      
+      // 이메일 미인증 케이스
+      if (error.message?.includes('Email not confirmed')) {
+        setError('이메일 인증이 필요합니다. 가입 시 받은 인증 메일을 확인해 주세요.')
+        setIsLoading(false)
+        return
+      }
+      
+      // 잘못된 인증 정보
+      if (error.message?.includes('Invalid login credentials')) {
+        setError('이메일 또는 비밀번호가 올바르지 않습니다. 다시 확인해 주세요.')
+        setIsLoading(false)
+        return
+      }
+      
+      // 기타 에러
+      setError(`로그인 중 오류가 발생했습니다: ${error.message}`)
+      setIsLoading(false)
+      return
+    }
+
+    // 세션 확인
+    if (!data.session) {
+      setError('로그인에 실패했습니다. 다시 시도해 주세요.')
       setIsLoading(false)
       return
     }

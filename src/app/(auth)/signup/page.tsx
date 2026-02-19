@@ -36,24 +36,42 @@ export default function SignUpPage() {
 
     setError(null)
 
+    // 이메일 형식 검증
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(email)) {
+      setError('올바른 이메일 주소를 입력해 주세요.')
+      return
+    }
+
+    // 비밀번호 검증
     if (password !== passwordConfirm) {
       setError('비밀번호가 일치하지 않습니다.')
       return
     }
     if (password.length < 8) {
-      setError('비밀번호는 8자 이상이어야 합니다.')
+      setError('비밀번호는 최소 8자 이상이어야 합니다.')
+      return
+    }
+    if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
+      setError('비밀번호는 영문과 숫자를 모두 포함해야 합니다.')
+      return
+    }
+
+    // 닉네임/단체명 검증
+    if (displayName.trim().length < 2) {
+      setError(userType === 'individual' ? '닉네임은 최소 2자 이상이어야 합니다.' : '단체명은 최소 2자 이상이어야 합니다.')
       return
     }
 
     setIsLoading(true)
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           user_type: userType,
-          display_name: displayName,
+          display_name: displayName.trim(),
         },
         emailRedirectTo: `${window.location.origin}/auth/callback`,
       },
@@ -61,17 +79,42 @@ export default function SignUpPage() {
 
     if (error) {
       console.error('Signup error:', error)
-      if (error.message === 'User already registered') {
-        setError('이미 가입된 이메일입니다.')
-      } else if (error.message?.includes('Password')) {
-        setError('비밀번호가 조건에 맞지 않습니다. (영문, 숫자 포함 8자 이상)')
-      } else {
-        setError(`회원가입 중 오류가 발생했습니다: ${error.message}`)
+      
+      // 이미 가입된 이메일
+      if (error.message?.includes('User already registered') || error.message?.includes('already exists')) {
+        setError('이미 가입된 이메일입니다. 로그인을 시도해 주세요.')
+        setIsLoading(false)
+        return
       }
+      
+      // 비밀번호 정책 위반
+      if (error.message?.includes('Password')) {
+        setError('비밀번호 조건을 확인해 주세요. (영문, 숫자 포함 8자 이상)')
+        setIsLoading(false)
+        return
+      }
+      
+      // 이메일 형식 오류
+      if (error.message?.includes('email')) {
+        setError('올바른 이메일 주소를 입력해 주세요.')
+        setIsLoading(false)
+        return
+      }
+      
+      // 기타 오류
+      setError(`회원가입 중 오류가 발생했습니다: ${error.message}`)
       setIsLoading(false)
       return
     }
 
+    // 가입 성공 확인
+    if (!data.user) {
+      setError('회원가입에 실패했습니다. 다시 시도해 주세요.')
+      setIsLoading(false)
+      return
+    }
+
+    console.log('Signup success:', data.user.id)
     router.push('/signup/verify-email?email=' + encodeURIComponent(email))
   }
 
