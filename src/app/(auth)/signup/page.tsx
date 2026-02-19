@@ -65,10 +65,7 @@ export default function SignUpPage() {
 
     setIsLoading(true)
 
-    const redirectUrl = typeof window !== 'undefined' 
-      ? `${window.location.origin}/auth/callback`
-      : 'http://localhost:3000/auth/callback'
-
+    // Supabase signUp - emailRedirectTo는 선택사항이므로 안전하게 처리
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -77,7 +74,6 @@ export default function SignUpPage() {
           user_type: userType,
           display_name: displayName.trim(),
         },
-        emailRedirectTo: redirectUrl,
       },
     })
 
