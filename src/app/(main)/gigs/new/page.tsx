@@ -129,7 +129,7 @@ export default function NewGigPage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <h2 className="font-bold text-gray-900 mb-3">공고 유형</h2>
           <div className="grid grid-cols-2 gap-3">
-            {([['hiring', '구인', '단원/연주자 모집'], ['seeking', '구직', '팀/오케스트라 찾기']] as const).map(([val, label, desc]) => (
+            {([['hiring', '단원 모집', '단원/연주자를 찾고 있어요'], ['seeking', '팀 찾기', '합류할 팀/오케스트라를 찾아요']] as const).map(([val, label, desc]) => (
               <button
                 key={val}
                 type="button"

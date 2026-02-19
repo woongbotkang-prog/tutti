@@ -77,7 +77,7 @@ function GigCard({ gig }: { gig: GigListItem }) {
                   : 'bg-emerald-100 text-emerald-700'
               }`}
             >
-              {gig.gig_type === 'hiring' ? '구인' : '구직'}
+              {gig.gig_type === 'hiring' ? '모집' : '팀 찾기'}
             </span>
             {gig.is_paid && (
               <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
@@ -246,8 +246,8 @@ export default function GigsPage() {
         <div className="flex max-w-lg mx-auto">
           {[
             { key: 'all',     label: '전체' },
-            { key: 'hiring',  label: '구인' },
-            { key: 'seeking', label: '구직' },
+            { key: 'hiring',  label: '단원 모집' },
+            { key: 'seeking', label: '팀 찾기' },
             { key: 'project', label: '🎼 프로젝트' },
           ].map(tab => (
             <button

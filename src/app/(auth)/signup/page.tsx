@@ -60,9 +60,14 @@ export default function SignUpPage() {
     })
 
     if (error) {
-      setError(error.message === 'User already registered'
-        ? '이미 가입된 이메일입니다.'
-        : '회원가입 중 오류가 발생했습니다.')
+      console.error('Signup error:', error)
+      if (error.message === 'User already registered') {
+        setError('이미 가입된 이메일입니다.')
+      } else if (error.message?.includes('Password')) {
+        setError('비밀번호가 조건에 맞지 않습니다. (영문, 숫자 포함 8자 이상)')
+      } else {
+        setError(`회원가입 중 오류가 발생했습니다: ${error.message}`)
+      }
       setIsLoading(false)
       return
     }
@@ -70,22 +75,10 @@ export default function SignUpPage() {
     router.push('/signup/verify-email?email=' + encodeURIComponent(email))
   }
 
-  const handleKakaoLogin = async () => {
+  const handleSocialLogin = async (provider: 'kakao' | 'google') => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'kakao',
-        options: { redirectTo: `${window.location.origin}/auth/callback` },
-      })
-      if (error) throw error
-    } catch {
-      setError('소셜 로그인 준비 중입니다. 이메일로 로그인해 주세요.')
-    }
-  }
-
-  const handleGoogleLogin = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider,
         options: { redirectTo: `${window.location.origin}/auth/callback` },
       })
       if (error) throw error
@@ -107,7 +100,7 @@ export default function SignUpPage() {
           {/* 소셜 로그인 */}
           <div className="space-y-3">
             <button
-              onClick={handleKakaoLogin}
+              onClick={() => handleSocialLogin('kakao')}
               className="w-full h-12 rounded-xl bg-[#FEE500] text-[#3C1E1E] font-semibold text-sm flex items-center justify-center gap-2 hover:bg-[#FDD835] transition-colors"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
@@ -117,7 +110,7 @@ export default function SignUpPage() {
             </button>
 
             <button
-              onClick={handleGoogleLogin}
+              onClick={() => handleSocialLogin('google')}
               className="w-full h-12 rounded-xl bg-white border border-gray-200 text-gray-700 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
             >
               <svg width="18" height="18" viewBox="0 0 18 18">

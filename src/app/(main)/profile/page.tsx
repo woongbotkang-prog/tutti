@@ -364,7 +364,7 @@ export default function ProfilePage() {
                         <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
                           gig.gig_type === 'hiring' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'
                         }`}>
-                          {gig.gig_type === 'hiring' ? '구인' : '구직'}
+                          {gig.gig_type === 'hiring' ? '모집' : '팀 찾기'}
                         </span>
                         <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
                           gig.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
