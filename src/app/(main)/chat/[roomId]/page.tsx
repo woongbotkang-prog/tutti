@@ -79,6 +79,8 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
 
   // 실시간 구독
   useEffect(() => {
+    console.log('[Realtime] 구독 시작:', params.roomId)
+    
     const channel = supabase
       .channel(`room:${params.roomId}`)
       .on('postgres_changes', {
@@ -87,9 +89,35 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
         table: 'chat_messages',
         filter: `room_id=eq.${params.roomId}`,
       }, (payload) => {
-        setMessages(prev => [...prev, payload.new as Message])
+        const newMsg = payload.new as Message
+        console.log('[Realtime] 새 메시지 수신:', newMsg)
+        
+        setMessages(prev => {
+          // 중복 체크: 같은 ID가 이미 있으면 추가하지 않음
+          if (prev.some(m => m.id === newMsg.id)) {
+            return prev
+          }
+          
+          // 임시 메시지가 있으면 교체 (같은 content + sender)
+          const tempIdx = prev.findIndex(
+            m => m.id.startsWith('temp-') && 
+                 m.content === newMsg.content && 
+                 m.sender_id === newMsg.sender_id
+          )
+          
+          if (tempIdx >= 0) {
+            // 임시 메시지를 실제 메시지로 교체
+            const updated = [...prev]
+            updated[tempIdx] = newMsg
+            return updated
+          }
+          
+          // 새 메시지 추가
+          return [...prev, newMsg]
+        })
+        
         // 새 메시지 수신 시 읽음 처리
-        if (userId && (payload.new as Message).sender_id !== userId) {
+        if (userId && newMsg.sender_id !== userId) {
           supabase
             .from('chat_participants')
             .update({ last_read_at: new Date().toISOString() })
@@ -98,9 +126,14 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
             .then()
         }
       })
-      .subscribe()
+      .subscribe((status) => {
+        console.log('[Realtime] 구독 상태:', status)
+      })
 
-    return () => { supabase.removeChannel(channel) }
+    return () => { 
+      console.log('[Realtime] 구독 해제:', params.roomId)
+      supabase.removeChannel(channel) 
+    }
   }, [params.roomId, userId])
 
   // 자동 스크롤
