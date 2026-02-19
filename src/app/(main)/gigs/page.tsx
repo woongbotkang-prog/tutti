@@ -290,12 +290,12 @@ export default function GigsPage() {
       </div>
 
       {/* 필터 + 정렬 */}
-      <div className="bg-white border-b border-gray-100 px-4 py-2.5 flex items-center gap-2 overflow-x-auto">
+      <div className="bg-white border-b border-gray-100 px-4 py-2 flex items-center gap-1.5 overflow-x-auto">
         {/* 악기 선택 */}
         <select
           value={selectedInstrument}
           onChange={e => setSelectedInstrument(e.target.value)}
-          className={`shrink-0 text-xs border rounded-full px-3 py-1.5 bg-white focus:outline-none transition-colors ${
+          className={`shrink-0 text-[11px] border rounded-full px-2.5 py-1 bg-white focus:outline-none transition-colors ${
             selectedInstrument !== '전체'
               ? 'border-indigo-400 text-indigo-700 bg-indigo-50'
               : 'border-gray-200 text-gray-600'
@@ -308,7 +308,7 @@ export default function GigsPage() {
         <select
           value={selectedRegion}
           onChange={e => setSelectedRegion(e.target.value)}
-          className={`shrink-0 text-xs border rounded-full px-3 py-1.5 bg-white focus:outline-none transition-colors ${
+          className={`shrink-0 text-[11px] border rounded-full px-2.5 py-1 bg-white focus:outline-none transition-colors ${
             selectedRegion !== '전체'
               ? 'border-indigo-400 text-indigo-700 bg-indigo-50'
               : 'border-gray-200 text-gray-600'
@@ -318,14 +318,14 @@ export default function GigsPage() {
         </select>
 
         {/* 구분선 */}
-        <div className="w-px h-5 bg-gray-200 shrink-0" />
+        <div className="w-px h-4 bg-gray-200 shrink-0" />
 
         {/* 정렬 옵션 */}
         {SORT_OPTIONS.map(opt => (
           <button
             key={opt.key}
             onClick={() => setSortBy(opt.key)}
-            className={`shrink-0 text-xs px-3 py-1.5 rounded-full border transition-colors font-medium ${
+            className={`shrink-0 text-[11px] px-2.5 py-1 rounded-full border transition-colors font-medium ${
               sortBy === opt.key
                 ? 'bg-indigo-600 text-white border-indigo-600'
                 : 'border-gray-200 text-gray-600 bg-white hover:border-indigo-300'
@@ -338,10 +338,10 @@ export default function GigsPage() {
         {/* 필터 초기화 */}
         {isFiltered && (
           <>
-            <div className="w-px h-5 bg-gray-200 shrink-0" />
+            <div className="w-px h-4 bg-gray-200 shrink-0" />
             <button
               onClick={resetFilters}
-              className="shrink-0 flex items-center gap-1 text-xs text-red-500 border border-red-200 rounded-full px-3 py-1.5 bg-red-50 hover:bg-red-100 transition-colors font-medium"
+              className="shrink-0 flex items-center gap-1 text-[11px] text-red-500 border border-red-200 rounded-full px-2.5 py-1 bg-red-50 hover:bg-red-100 transition-colors font-medium"
             >
               <X className="w-3 h-3" />
               초기화
@@ -361,7 +361,7 @@ export default function GigsPage() {
       )}
 
       {/* 공고 리스트 */}
-      <main className="max-w-lg mx-auto px-4 py-2 space-y-3">
+      <main className="max-w-lg mx-auto px-4 py-3 space-y-4">
 
         {/* 에러 */}
         {error && (

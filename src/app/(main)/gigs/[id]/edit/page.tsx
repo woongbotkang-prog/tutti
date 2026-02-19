@@ -10,12 +10,12 @@ import type { GigType, SkillLevel } from '@/types'
 
 const INSTRUMENTS = ['바이올린', '비올라', '첼로', '콘트라베이스', '플루트', '오보에', '클라리넷', '바순', '호른', '트럼펫', '트롬본', '튜바', '피아노', '하프', '타악기']
 const REGIONS = ['서울', '경기', '인천', '부산', '대구', '대전', '광주', '울산', '세종', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주']
-const LEVELS: { value: SkillLevel; label: string }[] = [
-  { value: 'beginner', label: '입문' },
-  { value: 'elementary', label: '초급' },
-  { value: 'intermediate', label: '중급' },
-  { value: 'advanced', label: '고급' },
-  { value: 'professional', label: '전문가' },
+const LEVELS: { value: SkillLevel; label: string; desc: string }[] = [
+  { value: 'beginner', label: '입문', desc: '악기를 시작한 지 얼마 안 된 단계' },
+  { value: 'elementary', label: '초급', desc: '기본기를 갖추고 간단한 곡 연주 가능' },
+  { value: 'intermediate', label: '중급', desc: '앙상블 경험이 있고 중급 레퍼토리 소화 가능' },
+  { value: 'advanced', label: '고급', desc: '음대 수준의 실력, 오케스트라 경험 다수' },
+  { value: 'professional', label: '전문가', desc: '전문 연주자급, 풍부한 무대 경력 보유' },
 ]
 
 export default function EditGigPage() {
@@ -235,14 +235,22 @@ export default function EditGigPage() {
           <h2 className="font-bold text-gray-900">모집 조건</h2>
           <div>
             <label className="text-sm font-medium text-gray-700 block mb-1.5">지역 <span className="text-red-500">*</span></label>
-            <select
-              value={selectedRegion}
-              onChange={e => setSelectedRegion(e.target.value)}
-              className="w-full h-11 rounded-xl border border-gray-200 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="">지역 선택</option>
-              {REGIONS.map(r => <option key={r}>{r}</option>)}
-            </select>
+            <div className="flex flex-wrap gap-2">
+              {REGIONS.map(r => (
+                <button
+                  key={r}
+                  type="button"
+                  onClick={() => setSelectedRegion(r)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                    selectedRegion === r
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                  }`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
           </div>
           <div>
             <label className="text-sm font-medium text-gray-700 block mb-1.5">최소 실력</label>
@@ -260,6 +268,9 @@ export default function EditGigPage() {
                 </button>
               ))}
             </div>
+            <p className="mt-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2">
+              {LEVELS.find(l => l.value === minLevel)?.desc}
+            </p>
           </div>
           <div className="flex items-center justify-between">
             <div>
