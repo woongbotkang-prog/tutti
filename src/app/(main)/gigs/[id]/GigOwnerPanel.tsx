@@ -40,26 +40,45 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [respondingId, setRespondingId] = useState<string | null>(null)
 
-  // 기존 수락된 지원의 채팅방 ID를 조회
+  // 기존 수락된 지원의 채팅방 ID를 조회 (없으면 자동 생성)
   useEffect(() => {
     const acceptedApps = applications.filter(app => app.status === 'accepted')
     if (acceptedApps.length === 0) return
 
-    const fetchChatRooms = async () => {
+    const fetchOrCreateChatRooms = async () => {
       const { data } = await supabase
         .from('chat_rooms')
         .select('id, application_id')
         .in('application_id', acceptedApps.map(app => app.id))
 
+      const roomMap: Record<string, string> = {}
       if (data && data.length > 0) {
-        const roomMap: Record<string, string> = {}
         data.forEach((room: { id: string; application_id: string }) => {
           roomMap[room.application_id] = room.id
         })
-        setChatRoomIds(prev => ({ ...prev, ...roomMap }))
       }
+
+      // 채팅방이 없는 수락된 지원에 대해 자동 생성
+      const missingApps = acceptedApps.filter(app => !roomMap[app.id])
+      if (missingApps.length > 0) {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          for (const app of missingApps) {
+            if (!app.applicant?.id) continue
+            const { data: roomId } = await supabase
+              .rpc('create_chat_room_for_application', {
+                p_application_id: app.id,
+                p_gig_owner_id: user.id,
+                p_applicant_id: app.applicant.id,
+              })
+            if (roomId) roomMap[app.id] = roomId
+          }
+        }
+      }
+
+      setChatRoomIds(prev => ({ ...prev, ...roomMap }))
     }
-    fetchChatRooms()
+    fetchOrCreateChatRooms()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleDelete = async () => {

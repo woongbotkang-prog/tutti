@@ -322,6 +322,39 @@ export async function fetchUnreadNotificationCount() {
   return count ?? 0
 }
 
+export async function fetchUnreadChatCount() {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return 0
+
+  // 내 채팅 참여 목록 조회
+  const { data: participations } = await supabase
+    .from('chat_participants')
+    .select('room_id, last_read_at')
+    .eq('user_id', user.id)
+
+  if (!participations || participations.length === 0) return 0
+
+  let total = 0
+  for (const p of participations) {
+    const query = supabase
+      .from('chat_messages')
+      .select('*', { count: 'exact', head: true })
+      .eq('room_id', p.room_id)
+      .eq('is_deleted', false)
+      .neq('sender_id', user.id)
+
+    if (p.last_read_at) {
+      query.gt('created_at', p.last_read_at)
+    }
+
+    const { count } = await query
+    total += count || 0
+  }
+
+  return total
+}
+
 // ============================================================
 // USER PROFILE
 // ============================================================

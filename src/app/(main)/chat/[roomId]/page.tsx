@@ -20,6 +20,8 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
   const [userId, setUserId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [sending, setSending] = useState(false)
+  const [otherUserName, setOtherUserName] = useState('')
+  const [gigTitle, setGigTitle] = useState('')
   const bottomRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -27,6 +29,29 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
       setUserId(user.id)
+
+      // 상대방 이름 조회
+      const { data: participants } = await supabase
+        .from('chat_participants')
+        .select('user_id, user:user_profiles(display_name)')
+        .eq('room_id', params.roomId)
+        .neq('user_id', user.id)
+        .limit(1)
+      if (participants?.[0]) {
+        const u = participants[0].user as { display_name?: string } | null
+        setOtherUserName(u?.display_name || '상대방')
+      }
+
+      // 공고 제목 조회
+      const { data: room } = await supabase
+        .from('chat_rooms')
+        .select('application:applications(gig:gigs(title))')
+        .eq('id', params.roomId)
+        .single()
+      if (room) {
+        const app = room.application as { gig?: { title?: string } } | null
+        setGigTitle(app?.gig?.title || '')
+      }
 
       // 메시지 조회
       const { data } = await supabase
@@ -61,11 +86,20 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
         filter: `room_id=eq.${params.roomId}`,
       }, (payload) => {
         setMessages(prev => [...prev, payload.new as Message])
+        // 새 메시지 수신 시 읽음 처리
+        if (userId && (payload.new as Message).sender_id !== userId) {
+          supabase
+            .from('chat_participants')
+            .update({ last_read_at: new Date().toISOString() })
+            .eq('room_id', params.roomId)
+            .eq('user_id', userId)
+            .then()
+        }
       })
       .subscribe()
 
     return () => { supabase.removeChannel(channel) }
-  }, [params.roomId])
+  }, [params.roomId, userId])
 
   // 자동 스크롤
   useEffect(() => {
@@ -113,8 +147,8 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
           </button>
         </Link>
         <div>
-          <h1 className="font-bold text-gray-900">채팅</h1>
-          <p className="text-xs text-gray-400">지원 관련 대화</p>
+          <h1 className="font-bold text-gray-900">{otherUserName || '채팅'}</h1>
+          {gigTitle && <p className="text-xs text-gray-400 truncate max-w-[200px]">{gigTitle}</p>}
         </div>
       </header>
 

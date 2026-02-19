@@ -65,8 +65,8 @@ export default async function ApplicationsPage() {
                     </p>
                   </div>
                 </Link>
-                {app.status === 'accepted' && chatRoomId && (
-                  <Link href={`/chat/${chatRoomId}`}>
+                {app.status === 'accepted' && (
+                  <Link href={chatRoomId ? `/chat/${chatRoomId}` : '/chat'}>
                     <div className="mt-1 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5 text-sm font-medium text-indigo-600 hover:bg-indigo-100 transition-colors text-center">
                       💬 채팅 바로가기
                     </div>

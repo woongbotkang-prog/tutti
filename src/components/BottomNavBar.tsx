@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { Search, FileText, MessageCircle, Bell, User } from 'lucide-react'
-import { fetchUnreadNotificationCount } from '@/lib/supabase/queries'
+import { fetchUnreadNotificationCount, fetchUnreadChatCount } from '@/lib/supabase/queries'
 
 interface NavItem {
   icon: typeof Search
@@ -47,13 +47,20 @@ function isActive(pathname: string, matchPrefix: string): boolean {
 export default function BottomNavBar() {
   const pathname = usePathname()
   const [unreadCount, setUnreadCount] = useState(0)
+  const [unreadChatCount, setUnreadChatCount] = useState(0)
 
   useEffect(() => {
     let mounted = true
     const load = async () => {
       try {
-        const count = await fetchUnreadNotificationCount()
-        if (mounted) setUnreadCount(count)
+        const [notifCount, chatCount] = await Promise.all([
+          fetchUnreadNotificationCount(),
+          fetchUnreadChatCount(),
+        ])
+        if (mounted) {
+          setUnreadCount(notifCount)
+          setUnreadChatCount(chatCount)
+        }
       } catch {
         // 로그인 안 됐거나 에러 → 무시
       }
@@ -74,6 +81,7 @@ export default function BottomNavBar() {
           const Icon = item.icon
           const active = isActive(pathname, item.matchPrefix)
           const isNotification = item.href === '/notifications'
+          const isChat = item.href === '/chat'
 
           return (
             <Link
@@ -88,6 +96,11 @@ export default function BottomNavBar() {
                 {isNotification && unreadCount > 0 && (
                   <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                     {unreadCount > 99 ? '99+' : unreadCount}
+                  </span>
+                )}
+                {isChat && unreadChatCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 bg-indigo-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                    {unreadChatCount > 99 ? '99+' : unreadChatCount}
                   </span>
                 )}
               </div>

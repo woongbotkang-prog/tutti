@@ -71,10 +71,12 @@ export default function NotificationsPage() {
 
     // 알림 타입에 따라 이동
     const data = notification.data
-    if (data?.gig_id) {
-      router.push(`/gigs/${data.gig_id}`)
-    } else if (data?.room_id) {
+    if (data?.room_id) {
       router.push(`/chat/${data.room_id}`)
+    } else if (notification.type === 'application_accepted') {
+      router.push('/chat')
+    } else if (data?.gig_id) {
+      router.push(`/gigs/${data.gig_id}`)
     }
   }
 
