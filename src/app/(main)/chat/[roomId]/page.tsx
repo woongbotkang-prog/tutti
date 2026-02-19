@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 
 interface Message {
   id: string
@@ -17,6 +18,8 @@ interface Message {
 export default function ChatRoomPage({ params }: { params: { roomId: string } }) {
   const router = useRouter()
   const supabase = createClient()
+  const { roomId } = params
+
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [userId, setUserId] = useState<string | null>(null)
@@ -24,149 +27,178 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
   const [sending, setSending] = useState(false)
   const [otherUserName, setOtherUserName] = useState('')
   const [gigTitle, setGigTitle] = useState('')
-  const bottomRef = useRef<HTMLDivElement>(null)
 
+  const bottomRef = useRef<HTMLDivElement>(null)
+  const channelRef = useRef<RealtimeChannel | null>(null)
+  const messagesRef = useRef<Message[]>([])
+
+  // messagesRef를 항상 최신으로 유지
   useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
+
+  // 자동 스크롤
+  const scrollToBottom = useCallback(() => {
+    setTimeout(() => {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }, 50)
+  }, [])
+
+  // 읽음 처리
+  const markAsRead = useCallback(async (uid: string) => {
+    await supabase
+      .from('chat_participants')
+      .update({ last_read_at: new Date().toISOString() })
+      .eq('room_id', roomId)
+      .eq('user_id', uid)
+  }, [roomId, supabase])
+
+  // 초기화: 인증 → 구독 → 메시지 로드 (순서 중요!)
+  useEffect(() => {
+    let mounted = true
+
     const init = async () => {
+      // 1. 인증 확인
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
+      if (!mounted) return
       setUserId(user.id)
 
-      // 상대방 이름 조회
-      const { data: participants } = await supabase
-        .from('chat_participants')
-        .select('user_id, user:user_profiles(display_name)')
-        .eq('room_id', params.roomId)
-        .neq('user_id', user.id)
-        .limit(1)
-      if (participants?.[0]) {
-        const u = participants[0].user as { display_name?: string } | null
+      // 2. Realtime 구독 먼저 설정 (메시지 누락 방지)
+      const channel = supabase
+        .channel(`room:${roomId}`, {
+          config: { broadcast: { self: true } },
+        })
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'chat_messages',
+          filter: `room_id=eq.${roomId}`,
+        }, (payload) => {
+          const newMsg = payload.new as Message
+          if (!mounted) return
+
+          setMessages(prev => {
+            // 중복 체크 (같은 ID)
+            if (prev.some(m => m.id === newMsg.id)) return prev
+
+            // 임시 메시지 교체 (optimistic update)
+            const tempIdx = prev.findIndex(
+              m => m.id.startsWith('temp-') &&
+                   m.content === newMsg.content &&
+                   m.sender_id === newMsg.sender_id
+            )
+            if (tempIdx >= 0) {
+              const updated = [...prev]
+              updated[tempIdx] = newMsg
+              return updated
+            }
+
+            return [...prev, newMsg]
+          })
+
+          scrollToBottom()
+
+          // 상대방 메시지 수신 시 읽음 처리
+          if (newMsg.sender_id !== user.id) {
+            markAsRead(user.id)
+          }
+        })
+        .subscribe()
+
+      channelRef.current = channel
+
+      // 3. 채팅방 메타 정보 로드 (병렬)
+      const [participantsRes, roomRes, messagesRes] = await Promise.all([
+        // 상대방 이름
+        supabase
+          .from('chat_participants')
+          .select('user_id, user:user_profiles(display_name)')
+          .eq('room_id', roomId)
+          .neq('user_id', user.id)
+          .limit(1),
+        // 공고 제목
+        supabase
+          .from('chat_rooms')
+          .select('application:applications(gig:gigs(title))')
+          .eq('id', roomId)
+          .single(),
+        // 메시지 로드
+        supabase
+          .from('chat_messages')
+          .select('*')
+          .eq('room_id', roomId)
+          .eq('is_deleted', false)
+          .order('created_at', { ascending: true })
+          .limit(100),
+      ])
+
+      if (!mounted) return
+
+      // 상대방 이름 설정
+      if (participantsRes.data?.[0]) {
+        const u = participantsRes.data[0].user as { display_name?: string } | null
         setOtherUserName(u?.display_name || '상대방')
       }
 
-      // 공고 제목 조회
-      const { data: room } = await supabase
-        .from('chat_rooms')
-        .select('application:applications(gig:gigs(title))')
-        .eq('id', params.roomId)
-        .single()
-      if (room) {
-        const app = room.application as { gig?: { title?: string } } | null
+      // 공고 제목 설정
+      if (roomRes.data) {
+        const app = roomRes.data.application as { gig?: { title?: string } } | null
         setGigTitle(app?.gig?.title || '')
       }
 
-      // 메시지 조회
-      const { data } = await supabase
-        .from('chat_messages')
-        .select('*')
-        .eq('room_id', params.roomId)
-        .eq('is_deleted', false)
-        .order('created_at', { ascending: true })
-        .limit(100)
+      // 메시지 설정
+      if (messagesRes.data) {
+        setMessages(messagesRes.data)
+      }
 
-      if (data) setMessages(data)
       setLoading(false)
+      scrollToBottom()
 
-      // 마지막 읽은 시간 업데이트
-      await supabase
-        .from('chat_participants')
-        .update({ last_read_at: new Date().toISOString() })
-        .eq('room_id', params.roomId)
-        .eq('user_id', user.id)
+      // 4. 읽음 처리
+      await markAsRead(user.id)
     }
+
     init()
-  }, [params.roomId])
 
-  // 실시간 구독
-  useEffect(() => {
-    console.log('[Realtime] 구독 시작:', params.roomId)
-    
-    const channel = supabase
-      .channel(`room:${params.roomId}`)
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'chat_messages',
-        filter: `room_id=eq.${params.roomId}`,
-      }, (payload) => {
-        const newMsg = payload.new as Message
-        console.log('[Realtime] 새 메시지 수신:', newMsg)
-        
-        setMessages(prev => {
-          // 중복 체크: 같은 ID가 이미 있으면 추가하지 않음
-          if (prev.some(m => m.id === newMsg.id)) {
-            return prev
-          }
-          
-          // 임시 메시지가 있으면 교체 (같은 content + sender)
-          const tempIdx = prev.findIndex(
-            m => m.id.startsWith('temp-') && 
-                 m.content === newMsg.content && 
-                 m.sender_id === newMsg.sender_id
-          )
-          
-          if (tempIdx >= 0) {
-            // 임시 메시지를 실제 메시지로 교체
-            const updated = [...prev]
-            updated[tempIdx] = newMsg
-            return updated
-          }
-          
-          // 새 메시지 추가
-          return [...prev, newMsg]
-        })
-        
-        // 새 메시지 수신 시 읽음 처리
-        if (userId && newMsg.sender_id !== userId) {
-          supabase
-            .from('chat_participants')
-            .update({ last_read_at: new Date().toISOString() })
-            .eq('room_id', params.roomId)
-            .eq('user_id', userId)
-            .then()
-        }
-      })
-      .subscribe((status) => {
-        console.log('[Realtime] 구독 상태:', status)
-      })
-
-    return () => { 
-      console.log('[Realtime] 구독 해제:', params.roomId)
-      supabase.removeChannel(channel) 
+    return () => {
+      mounted = false
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current)
+        channelRef.current = null
+      }
     }
-  }, [params.roomId, userId])
+  }, [roomId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // 자동 스크롤
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
-
+  // 메시지 전송
   const handleSend = async () => {
     if (!newMessage.trim() || sending || !userId) return
     setSending(true)
     const content = newMessage.trim()
     setNewMessage('')
 
-    // Optimistic update: 즉시 UI에 추가
+    // Optimistic update
+    const tempId = `temp-${Date.now()}`
     const tempMessage: Message = {
-      id: `temp-${Date.now()}`,
-      room_id: params.roomId,
+      id: tempId,
+      room_id: roomId,
       sender_id: userId,
       content,
       created_at: new Date().toISOString(),
       is_deleted: false,
     }
     setMessages(prev => [...prev, tempMessage])
+    scrollToBottom()
 
     const { error } = await supabase.from('chat_messages').insert({
-      room_id: params.roomId,
+      room_id: roomId,
       sender_id: userId,
       content,
     })
 
     if (error) {
       // 실패 시 롤백
-      setMessages(prev => prev.filter(m => m.id !== tempMessage.id))
+      setMessages(prev => prev.filter(m => m.id !== tempId))
       setNewMessage(content)
     }
     setSending(false)
@@ -180,13 +212,13 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
   }
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-white">
       <div className="animate-spin w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
     </div>
   )
 
   return (
-    <div className="flex flex-col h-screen bg-white">
+    <div className="flex flex-col h-screen bg-gray-50">
       {/* 헤더 */}
       <header className="bg-white px-4 py-4 flex items-center gap-3 border-b border-gray-100 shrink-0">
         <Link href="/chat">
@@ -206,7 +238,7 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.length === 0 && (
           <div className="text-center py-8 text-gray-400 text-sm">
-            첫 번째 메시지를 보내보세요! 👋
+            첫 번째 메시지를 보내보세요!
           </div>
         )}
         {messages.map(msg => {
@@ -214,9 +246,9 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
           return (
             <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
-                isMine ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-gray-100 text-gray-900 rounded-bl-sm'
+                isMine ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white text-gray-900 rounded-bl-sm shadow-sm'
               }`}>
-                <p className="text-sm leading-relaxed">{msg.content}</p>
+                <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                 <p className={`text-xs mt-1 ${isMine ? 'text-indigo-200' : 'text-gray-400'}`}>
                   {new Date(msg.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                 </p>
@@ -228,7 +260,7 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
       </div>
 
       {/* 입력창 */}
-      <div className="border-t border-gray-100 px-4 py-3 bg-white shrink-0 safe-area-inset-bottom">
+      <div className="border-t border-gray-100 px-4 py-3 bg-white shrink-0">
         <div className="flex items-end gap-2">
           <textarea
             value={newMessage}

@@ -9,6 +9,7 @@ interface ChatRoomPreview {
   otherUserName: string
   lastMessage: string
   lastMessageAt: string
+  lastMessageRaw: string // ISO string for sorting
   unreadCount: number
   gigTitle: string
 }
@@ -41,6 +42,7 @@ export default function ChatListPage() {
         .from('chat_rooms')
         .select(`
           id,
+          created_at,
           application:applications(
             gig:gigs(title)
           )
@@ -79,18 +81,23 @@ export default function ChatListPage() {
           // 안 읽은 메시지 수 계산
           const myParticipation = participations.find(p => p.room_id === room.id)
           let unreadCount = 0
-          if (myParticipation?.last_read_at) {
-            const { count } = await supabase
+          if (myParticipation) {
+            let countQuery = supabase
               .from('chat_messages')
               .select('*', { count: 'exact', head: true })
               .eq('room_id', room.id)
               .eq('is_deleted', false)
               .neq('sender_id', user.id)
-              .gt('created_at', myParticipation.last_read_at)
+
+            if (myParticipation.last_read_at) {
+              countQuery = countQuery.gt('created_at', myParticipation.last_read_at)
+            }
+
+            const { count } = await countQuery
             unreadCount = count || 0
           }
 
-          // gig title 추출 (타입 안전하게)
+          // gig title 추출
           const application = room.application as { gig?: { title?: string } } | null
           const gigTitle = application?.gig?.title || '공고'
 
@@ -101,17 +108,23 @@ export default function ChatListPage() {
             lastMessageAt: lastMsg
               ? new Date(lastMsg.created_at).toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' })
               : '',
+            lastMessageRaw: lastMsg?.created_at || room.created_at,
             unreadCount,
             gigTitle,
           } as ChatRoomPreview
         })
       )
 
+      // 최신 메시지순 정렬
+      roomPreviews.sort((a, b) =>
+        new Date(b.lastMessageRaw).getTime() - new Date(a.lastMessageRaw).getTime()
+      )
+
       setRooms(roomPreviews)
       setLoading(false)
     }
     fetchRooms()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) {
     return (
@@ -129,7 +142,11 @@ export default function ChatListPage() {
 
       {rooms.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 px-8 text-center">
-          <span className="text-5xl mb-4">💬</span>
+          <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center mb-4">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="1.5">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+            </svg>
+          </div>
           <h2 className="text-lg font-bold text-gray-900 mb-2">아직 채팅이 없어요</h2>
           <p className="text-sm text-gray-500 mb-6">
             공고에 지원하거나 지원자를 수락하면<br />채팅이 시작됩니다
@@ -154,12 +171,14 @@ export default function ChatListPage() {
                     <p className="font-bold text-gray-900 text-sm truncate">{room.otherUserName}</p>
                     <p className="text-xs text-gray-400 shrink-0 ml-2">{room.lastMessageAt}</p>
                   </div>
-                  <p className="text-xs text-gray-500 truncate">{room.lastMessage}</p>
+                  <p className={`text-xs truncate ${room.unreadCount > 0 ? 'text-gray-900 font-semibold' : 'text-gray-500'}`}>
+                    {room.lastMessage}
+                  </p>
                   <p className="text-xs text-indigo-400 mt-0.5 truncate">{room.gigTitle}</p>
                 </div>
                 {room.unreadCount > 0 && (
                   <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center font-bold shrink-0">
-                    {room.unreadCount}
+                    {room.unreadCount > 9 ? '9+' : room.unreadCount}
                   </span>
                 )}
               </Link>

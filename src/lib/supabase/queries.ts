@@ -337,7 +337,7 @@ export async function fetchUnreadChatCount() {
 
   let total = 0
   for (const p of participations) {
-    const query = supabase
+    let query = supabase
       .from('chat_messages')
       .select('*', { count: 'exact', head: true })
       .eq('room_id', p.room_id)
@@ -345,7 +345,7 @@ export async function fetchUnreadChatCount() {
       .neq('sender_id', user.id)
 
     if (p.last_read_at) {
-      query.gt('created_at', p.last_read_at)
+      query = query.gt('created_at', p.last_read_at)
     }
 
     const { count } = await query
