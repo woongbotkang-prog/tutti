@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { fetchMyProfile, upsertProfile, upsertUserInstruments, fetchMyGigs } from '@/lib/supabase/queries'
+import { fetchMyProfile, upsertProfile, upsertUserInstruments, fetchMyGigs, uploadAvatar } from '@/lib/supabase/queries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { SkillLevel } from '@/types'
@@ -34,6 +34,8 @@ export default function ProfilePage() {
   const [selectedRegion, setSelectedRegion] = useState('')
   const [bio, setBio] = useState('')
   const [mannerTemperature, setMannerTemperature] = useState(36.5)
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
@@ -56,6 +58,7 @@ export default function ProfilePage() {
         if (profile) {
           setDisplayName(profile.display_name || '')
           setBio(profile.bio || '')
+          setAvatarUrl(profile.avatar_url || null)
           setMannerTemperature(profile.manner_temperature || 36.5)
           if (profile.region) {
             setSelectedRegion(profile.region.name || '')
@@ -96,6 +99,45 @@ export default function ProfilePage() {
         ? prev.filter(i => i !== instrument)
         : [...prev, instrument]
     )
+  }
+
+  const MAX_AVATAR_SIZE = 2 * 1024 * 1024 // 2MB
+  const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      setError('JPG, PNG, WebP 형식만 업로드할 수 있어요.')
+      return
+    }
+    if (file.size > MAX_AVATAR_SIZE) {
+      setError('사진 크기는 2MB 이하만 가능해요.')
+      return
+    }
+
+    setAvatarUploading(true)
+    setError(null)
+    try {
+      const url = await uploadAvatar(file)
+      // 캐시 방지를 위한 타임스탬프 추가
+      setAvatarUrl(`${url}?t=${Date.now()}`)
+
+      // DB에 avatar_url 즉시 저장
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        await supabase
+          .from('user_profiles')
+          .update({ avatar_url: url, updated_at: new Date().toISOString() })
+          .eq('id', user.id)
+      }
+    } catch (err) {
+      console.error('아바타 업로드 실패:', err)
+      setError('사진 업로드에 실패했어요. 다시 시도해 주세요.')
+    } finally {
+      setAvatarUploading(false)
+    }
   }
 
   const handleSave = async () => {
@@ -218,10 +260,38 @@ export default function ProfilePage() {
 
         {/* 아바타 */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-col items-center gap-3">
-          <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center text-3xl">
-            🎻
-          </div>
-          <span className="text-sm text-gray-400">사진 변경 (준비 중)</span>
+          <label className="relative cursor-pointer group">
+            {avatarUrl ? (
+              <img
+                src={avatarUrl}
+                alt="프로필 사진"
+                className="w-20 h-20 rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center text-3xl">
+                🎻
+              </div>
+            )}
+            <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
+              </svg>
+            </div>
+            {avatarUploading && (
+              <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
+                <div className="animate-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full" />
+              </div>
+            )}
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleAvatarChange}
+              className="hidden"
+              disabled={avatarUploading}
+            />
+          </label>
+          <span className="text-xs text-gray-400">사진을 눌러 변경 (2MB 이하, JPG/PNG/WebP)</span>
         </div>
 
         {/* 기본 정보 */}

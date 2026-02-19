@@ -352,25 +352,52 @@ export async function upsertProfile(profileData: {
   displayName: string
   bio?: string
   regionId?: string
+  avatarUrl?: string
 }) {
   const supabase = createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('로그인이 필요합니다.')
 
+  const updateData: Record<string, unknown> = {
+    id: user.id,
+    display_name: profileData.displayName,
+    bio: profileData.bio || null,
+    region_id: profileData.regionId || null,
+    updated_at: new Date().toISOString(),
+  }
+  if (profileData.avatarUrl !== undefined) {
+    updateData.avatar_url = profileData.avatarUrl
+  }
+
   const { data, error } = await supabase
     .from('user_profiles')
-    .upsert({
-      id: user.id,
-      display_name: profileData.displayName,
-      bio: profileData.bio || null,
-      region_id: profileData.regionId || null,
-      updated_at: new Date().toISOString(),
-    })
+    .upsert(updateData)
     .select()
     .single()
 
   if (error) throw error
   return data
+}
+
+export async function uploadAvatar(file: File): Promise<string> {
+  const supabase = createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('로그인이 필요합니다.')
+
+  const fileExt = file.name.split('.').pop()?.toLowerCase()
+  const filePath = `${user.id}/avatar.${fileExt}`
+
+  const { error } = await supabase.storage
+    .from('avatars')
+    .upload(filePath, file, { upsert: true })
+
+  if (error) throw error
+
+  const { data: urlData } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(filePath)
+
+  return urlData.publicUrl
 }
 
 export async function upsertUserInstruments(
