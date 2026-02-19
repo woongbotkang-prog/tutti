@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
-import { fetchMyProfile, upsertProfile, upsertUserInstruments, fetchMyGigs, fetchUnreadNotificationCount } from '@/lib/supabase/queries'
+import { fetchMyProfile, upsertProfile, upsertUserInstruments, fetchMyGigs } from '@/lib/supabase/queries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import type { SkillLevel } from '@/types'
@@ -48,8 +48,6 @@ export default function ProfilePage() {
     region: { name: string } | null
     instruments: Array<{ instrument: { name: string } | null }>
   }>>([])
-  const [unreadCount, setUnreadCount] = useState(0)
-
   // 기존 프로필 불러오기
   useEffect(() => {
     const loadProfile = async () => {
@@ -88,17 +86,8 @@ export default function ProfilePage() {
         console.error('내 공고 불러오기 실패:', e)
       }
     }
-    const loadUnread = async () => {
-      try {
-        const count = await fetchUnreadNotificationCount()
-        setUnreadCount(count)
-      } catch (e) {
-        console.error('알림 수 불러오기 실패:', e)
-      }
-    }
     loadProfile()
     loadMyGigs()
-    loadUnread()
   }, [])
 
   const toggleInstrument = (instrument: string) => {
@@ -214,21 +203,9 @@ export default function ProfilePage() {
       {/* 헤더 */}
       <header className="bg-white px-4 py-4 flex items-center justify-between border-b border-gray-100 sticky top-0 z-20">
         <h1 className="text-lg font-black text-gray-900">내 프로필</h1>
-        <div className="flex items-center gap-3">
-          <Link href="/notifications" className="relative text-gray-400 hover:text-gray-600">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-            </svg>
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </Link>
-          <button onClick={handleLogout} className="text-sm text-gray-400 hover:text-gray-600">
-            로그아웃
-          </button>
-        </div>
+        <button onClick={handleLogout} className="text-sm text-gray-400 hover:text-gray-600">
+          로그아웃
+        </button>
       </header>
 
       <main className="max-w-lg mx-auto px-4 py-4 space-y-4">

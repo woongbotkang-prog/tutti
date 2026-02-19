@@ -100,14 +100,7 @@ export default function NotificationsPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <header className="bg-white px-4 py-4 flex items-center justify-between border-b border-gray-100 sticky top-0 z-20">
-        <div className="flex items-center gap-3">
-          <button onClick={() => router.back()} className="text-gray-400 hover:text-gray-600">
-            <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h1 className="text-lg font-black text-gray-900">알림</h1>
-        </div>
+        <h1 className="text-lg font-black text-gray-900">알림</h1>
         {unreadCount > 0 && (
           <button onClick={handleMarkAllRead} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
             모두 읽음

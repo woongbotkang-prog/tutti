@@ -107,38 +107,21 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
       }
 
       // 수락 시 채팅방 자동 생성
-      if (status === 'accepted') {
-        // 현재 로그인 유저 (공고 작성자)
+      if (status === 'accepted' && applicantId) {
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
-          // 중복 방지: 이미 이 application에 대한 채팅방이 있는지 확인
-          const { data: existingRoom } = await supabase
-            .from('chat_rooms')
-            .select('id')
-            .eq('application_id', applicationId)
-            .maybeSingle()
+          // RPC 함수로 채팅방 + 참여자를 원자적으로 생성
+          const { data: roomId, error: rpcError } = await supabase
+            .rpc('create_chat_room_for_application', {
+              p_application_id: applicationId,
+              p_gig_owner_id: user.id,
+              p_applicant_id: applicantId,
+            })
 
-          if (!existingRoom) {
-            // 채팅방 생성
-            const { data: newRoom, error: roomError } = await supabase
-              .from('chat_rooms')
-              .insert({
-                application_id: applicationId,
-                room_type: 'direct',
-              })
-              .select('id')
-              .single()
-
-            if (!roomError && newRoom) {
-              // 참여자 추가 (작성자 + 지원자)
-              await supabase.from('chat_participants').insert([
-                { room_id: newRoom.id, user_id: user.id },
-                { room_id: newRoom.id, user_id: applicantId },
-              ])
-              setChatRoomIds(prev => ({ ...prev, [applicationId]: newRoom.id }))
-            }
-          } else if (existingRoom) {
-            setChatRoomIds(prev => ({ ...prev, [applicationId]: existingRoom.id }))
+          if (!rpcError && roomId) {
+            setChatRoomIds(prev => ({ ...prev, [applicationId]: roomId }))
+          } else if (rpcError) {
+            console.error('채팅방 생성 실패:', rpcError)
           }
         }
       }

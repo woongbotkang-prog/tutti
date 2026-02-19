@@ -189,9 +189,9 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
         )}
       </main>
 
-      {/* 하단 지원 버튼 */}
+      {/* 하단 지원 버튼 — 바텀 네비게이션 바 위에 위치 */}
       {!isOwner && (
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-4 py-4 safe-area-inset-bottom">
+        <div className="fixed bottom-[60px] left-0 right-0 bg-white border-t border-gray-100 px-4 py-4">
           <div className="max-w-lg mx-auto">
             {!user ? (
               <Link href={`/login?next=/gigs/${params.id}`}>

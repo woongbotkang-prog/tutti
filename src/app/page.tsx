@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
-import { Home, Search, MessageCircle, User } from 'lucide-react'
+import { Home, Search, MessageCircle, Bell, User } from 'lucide-react'
 
 export default async function HomePage() {
   const supabase = await createClient()
@@ -125,19 +125,20 @@ export default async function HomePage() {
       </section>
 
       {/* 하단 탭바 */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 safe-area-inset-bottom">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50 safe-area-inset-bottom">
         <div className="max-w-lg mx-auto flex">
           {[
-            { icon: Home, label: '홈', href: '/', active: true },
-            { icon: Search, label: '탐색', href: '/gigs', active: false },
-            { icon: MessageCircle, label: '채팅', href: '/chat', active: false },
-            { icon: User, label: '내 정보', href: '/profile', active: false },
+            { icon: Home,          label: '홈',     href: '/',              active: true },
+            { icon: Search,        label: '공고',   href: '/gigs',          active: false },
+            { icon: MessageCircle, label: '채팅',   href: '/chat',          active: false },
+            { icon: Bell,          label: '알림',   href: '/notifications', active: false },
+            { icon: User,          label: '프로필', href: '/profile',       active: false },
           ].map((item) => {
             const Icon = item.icon
             return (
-              <Link key={item.href} href={item.href} className={`flex-1 flex flex-col items-center py-3 transition-colors ${item.active ? 'text-indigo-600' : 'text-gray-400 hover:text-indigo-600'}`}>
+              <Link key={item.href} href={item.href} className={`flex-1 flex flex-col items-center py-2.5 transition-colors ${item.active ? 'text-indigo-600' : 'text-gray-400 hover:text-indigo-600'}`}>
                 <Icon className="w-5 h-5" />
-                <span className="text-xs mt-0.5">{item.label}</span>
+                <span className="text-[10px] mt-1">{item.label}</span>
               </Link>
             )
           })}
