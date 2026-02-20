@@ -338,7 +338,7 @@ export default function ProfilePage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
         await supabase.from('user_instruments').delete().eq('user_id', user.id)
-        await supabase.from('profiles').delete().eq('id', user.id)
+        await supabase.from('user_profiles').delete().eq('id', user.id)
       }
       // auth.users에서도 완전 삭제 (서버사이드)
       const res = await fetch('/api/auth/delete-account', { method: 'POST' })
