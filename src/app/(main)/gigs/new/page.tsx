@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import AddPieceModal from '@/components/AddPieceModal'
+import GigImageUpload from '@/components/GigImageUpload'
 import type { GigType, SkillLevel } from '@/types'
 
 const INSTRUMENTS = ['바이올린', '비올라', '첼로', '콘트라베이스', '플루트', '오보에', '클라리넷', '바순', '호른', '트럼펫', '트롬본', '튜바', '피아노', '하프', '타악기']
@@ -27,9 +28,8 @@ export default function NewGigPage() {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [selectedInstruments, setSelectedInstruments] = useState<Record<string, number>>({})
-  const [selectedRegion, setSelectedRegion] = useState('')
+  const [selectedRegions, setSelectedRegions] = useState<string[]>([])
   const [minLevel, setMinLevel] = useState<SkillLevel>('beginner')
-  const [isPaid, setIsPaid] = useState(false)
   const [eventDate, setEventDate] = useState('')
   const [maxApplicants, setMaxApplicants] = useState('1')
   const [isLoading, setIsLoading] = useState(false)
@@ -38,6 +38,7 @@ export default function NewGigPage() {
   const [isProject, setIsProject] = useState(false)
   const [pieces, setPieces] = useState<Array<{piece_id?: string; text_input: string; composer_name?: string; period?: string; notes?: string}>>([])
   const [showPieceModal, setShowPieceModal] = useState(false)
+  const [gigImages, setGigImages] = useState<string[]>([])
 
   const toggleInstrument = (i: string) =>
     setSelectedInstruments(p => {
@@ -57,7 +58,7 @@ export default function NewGigPage() {
     if (isLoading) return
     if (!title.trim()) return setError('제목을 입력해 주세요.')
     if (Object.keys(selectedInstruments).length === 0) return setError('악기를 하나 이상 선택해 주세요.')
-    if (!selectedRegion) return setError('지역을 선택해 주세요.')
+    if (selectedRegions.length === 0) return setError('지역을 하나 이상 선택해 주세요.')
 
     setIsLoading(true)
     setError(null)
@@ -65,12 +66,13 @@ export default function NewGigPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    // 지역 ID 조회
+    // 지역 ID 조회 (복수 지역)
     const { data: regionData } = await supabase
       .from('regions')
       .select('id')
-      .eq('name', selectedRegion)
-      .single()
+      .in('name', selectedRegions)
+
+    const regionIds = (regionData || []).map(r => r.id)
 
     const { data: gig, error: gigError } = await supabase
       .from('gigs')
@@ -79,14 +81,16 @@ export default function NewGigPage() {
         gig_type: gigType,
         title: title.trim(),
         description: description.trim() || null,
-        region_id: regionData?.id || null,
+        region_id: regionIds[0] || null,
+        region_ids: regionIds,
         min_skill_level: minLevel,
-        is_paid: isPaid,
+        is_paid: false,
         is_project: isProject,
         piece_name: isProject && pieces.length > 0 ? pieces[0].text_input : null,
         max_applicants: Object.values(selectedInstruments).reduce((sum, n) => sum + n, 0) || parseInt(maxApplicants) || 1,
         event_date: eventDate || null,
         status: 'active',
+        image_urls: gigImages.length > 0 ? gigImages : [],
         expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
       })
       .select('id')
@@ -262,6 +266,11 @@ export default function NewGigPage() {
           </div>
         </div>
 
+        {/* 사진 첨부 */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <GigImageUpload images={gigImages} onChange={setGigImages} maxImages={3} maxSizeMB={5} />
+        </div>
+
         {/* 악기 + 파트별 인원 */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <h2 className="font-bold text-gray-900 mb-1">악기 <span className="text-red-500">*</span></h2>
@@ -318,15 +327,18 @@ export default function NewGigPage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-4">
           <h2 className="font-bold text-gray-900">모집 조건</h2>
           <div>
-            <label className="text-sm font-medium text-gray-700 block mb-1.5">지역 <span className="text-red-500">*</span></label>
+            <label className="text-sm font-medium text-gray-700 block mb-1">지역 <span className="text-red-500">*</span></label>
+            <p className="text-xs text-gray-400 mb-2">복수 선택 가능</p>
             <div className="flex flex-wrap gap-2">
               {REGIONS.map(r => (
                 <button
                   key={r}
                   type="button"
-                  onClick={() => setSelectedRegion(r)}
+                  onClick={() => setSelectedRegions(prev =>
+                    prev.includes(r) ? prev.filter(x => x !== r) : [...prev, r]
+                  )}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                    selectedRegion === r
+                    selectedRegions.includes(r)
                       ? 'bg-indigo-600 text-white border-indigo-600'
                       : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
                   }`}
@@ -356,19 +368,6 @@ export default function NewGigPage() {
               {LEVELS.find(l => l.value === minLevel)?.desc}
             </p>
           </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm font-medium text-gray-700">유급 여부</p>
-              <p className="text-xs text-gray-400">연주비 지급 여부</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsPaid(p => !p)}
-              className={`w-12 h-6 rounded-full transition-colors ${isPaid ? 'bg-indigo-600' : 'bg-gray-200'}`}
-            >
-              <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5 ${isPaid ? 'translate-x-6' : ''}`} />
-            </button>
-          </div>
           <div>
             <label className="text-sm font-medium text-gray-700 block mb-1.5">모집 인원</label>
             {Object.keys(selectedInstruments).length > 0 ? (
@@ -391,6 +390,7 @@ export default function NewGigPage() {
             label="연주 날짜 (선택)"
             value={eventDate}
             onChange={e => setEventDate(e.target.value)}
+            min={new Date().toISOString().split('T')[0]}
           />
         </div>
 

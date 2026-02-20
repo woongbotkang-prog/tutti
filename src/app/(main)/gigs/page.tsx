@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { Search, SlidersHorizontal, X, Filter } from 'lucide-react'
+import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { fetchGigs, type GigListItem, type SortOption } from '@/lib/supabase/queries'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -78,7 +78,7 @@ function GigCard({ gig }: { gig: GigListItem }) {
 
   return (
     <Link href={`/gigs/${gig.id}`}>
-      <div className={`bg-white rounded-2xl border border-gray-100 p-4 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all active:scale-[0.99] ${isExpired ? 'opacity-50' : ''}`}>
+      <div className={`bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all active:scale-[0.99] ${isExpired ? 'opacity-50' : ''}`}>
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-1.5 flex-wrap">
             {gig.is_project ? (
@@ -94,11 +94,6 @@ function GigCard({ gig }: { gig: GigListItem }) {
                 }`}
               >
                 {gig.gig_type === 'hiring' ? '연주자 모집' : '팀 찾기'}
-              </span>
-            )}
-            {gig.is_paid && (
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">
-                유급
               </span>
             )}
             {isExpired ? (
@@ -150,7 +145,6 @@ export default function GigsPage() {
   const [sortBy, setSortBy]                   = useState<SortOption>('latest')
   const [searchQuery, setSearchQuery]         = useState('')
   const [searchInput, setSearchInput]         = useState('')  // 디바운스용 입력 버퍼
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
 
   const [gigs, setGigs]       = useState<GigListItem[]>([])
   const [page, setPage]       = useState(0)
@@ -382,24 +376,9 @@ export default function GigsPage() {
         )}
       </div>
 
-      {/* 고급 필터 토글 */}
-      <div className="bg-white border-b border-gray-100 px-4 py-2 max-w-lg mx-auto">
-        <button
-          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-          className={`flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
-            showAdvancedFilters
-              ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
-              : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
-          }`}
-        >
-          <Filter className="w-3.5 h-3.5" />
-          고급 필터
-        </button>
-      </div>
-
-      {/* 고급 필터 섹션 */}
-      {showAdvancedFilters && (
-        <div className="bg-gray-50 border-b border-gray-100 px-4 py-3 max-w-lg mx-auto">
+      {/* 시대/난이도 필터 — 항상 노출 */}
+      <div className="bg-gray-50 border-b border-gray-100">
+        <div className="max-w-lg mx-auto px-4 py-3">
           <div className="grid grid-cols-2 gap-3">
             {/* 시대 선택 */}
             <div>
@@ -421,7 +400,7 @@ export default function GigsPage() {
 
             {/* 실력 선택 */}
             <div>
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">실력</label>
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">난이도</label>
               <select
                 value={selectedLevel}
                 onChange={e => setSelectedLevel(e.target.value)}
@@ -438,7 +417,7 @@ export default function GigsPage() {
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* 결과 수 표시 */}
       {!loading && (

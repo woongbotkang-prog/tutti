@@ -167,20 +167,20 @@ export default async function HomePage() {
       {/* 빠른 시작 3분할 — 워딩 통일 적용 */}
       <section className="max-w-lg mx-auto px-6 pb-6">
         <div className="grid grid-cols-3 gap-3">
-          <Link href="/gigs/new?mode=project" className="bg-gradient-to-b from-purple-50 to-white rounded-2xl border border-purple-100 p-4 text-center hover:shadow-md transition-shadow">
-            <span className="text-2xl mb-1.5 block">🎼</span>
-            <p className="font-bold text-gray-900 text-xs">곡 기반</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">프로젝트 만들기</p>
-          </Link>
-          <Link href="/gigs/new?mode=hiring" className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm hover:shadow-md transition-shadow">
-            <span className="text-2xl mb-1.5 block">🎻</span>
-            <p className="font-bold text-gray-900 text-xs">연주자 모집</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">팀원 찾기</p>
+          <Link href="/gigs/new" className="bg-gradient-to-b from-purple-50 to-white rounded-2xl border border-purple-100 p-4 text-center hover:shadow-md transition-shadow">
+            <span className="text-2xl mb-1.5 block">📣</span>
+            <p className="font-bold text-gray-900 text-xs">모집하기</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">팀원 구하기</p>
           </Link>
           <Link href="/gigs?tab=seeking" className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm hover:shadow-md transition-shadow">
-            <span className="text-2xl mb-1.5 block">🤝</span>
-            <p className="font-bold text-gray-900 text-xs">팀 찾기</p>
-            <p className="text-[10px] text-gray-500 mt-0.5">합류할 팀</p>
+            <span className="text-2xl mb-1.5 block">🙋</span>
+            <p className="font-bold text-gray-900 text-xs">지원하기</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">팀에 합류하기</p>
+          </Link>
+          <Link href="/gigs" className="bg-white rounded-2xl border border-gray-100 p-4 text-center shadow-sm hover:shadow-md transition-shadow">
+            <span className="text-2xl mb-1.5 block">🔍</span>
+            <p className="font-bold text-gray-900 text-xs">둘러보기</p>
+            <p className="text-[10px] text-gray-500 mt-0.5">공고 탐색하기</p>
           </Link>
         </div>
       </section>

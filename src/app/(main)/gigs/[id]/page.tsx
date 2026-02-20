@@ -115,6 +115,17 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
             ✅ 지원이 완료되었습니다! 결과는 알림으로 안내드릴게요.
           </div>
         )}
+        {/* 이미지 갤러리 */}
+        {gig.image_urls && gig.image_urls.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+            {gig.image_urls.map((url: string, idx: number) => (
+              <div key={idx} className="shrink-0 w-48 h-36 rounded-2xl overflow-hidden border border-gray-100">
+                <img src={url} alt={`공고 사진 ${idx + 1}`} className="w-full h-full object-cover" />
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* 기본 정보 카드 */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
@@ -126,11 +137,6 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
               }`}>
                 {gig.gig_type === 'hiring' ? '연주자 모집' : '팀 찾기'}
               </span>
-            )}
-            {gig.is_paid ? (
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700">유급</span>
-            ) : (
-              <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">무급</span>
             )}
           </div>
 
