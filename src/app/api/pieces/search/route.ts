@@ -13,8 +13,17 @@ export async function GET(request: NextRequest) {
   const composerId = searchParams.get('composer_id') || null
   const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50)
 
+  const mapPieceRows = (rows: any[] | null | undefined) =>
+    (rows || []).map((row: any) => ({
+      id: row.id,
+      title: row.title,
+      period: row.period,
+      difficulty_level: row.difficulty_level,
+      composer_name: row.composer_name ?? row.composer?.name ?? null,
+      composer_name_ko: row.composer_name_ko ?? row.composer?.name_ko ?? null,
+    }))
+
   if (!q && !period && !difficulty && !composerId) {
-    // 쿼리 없으면 최근 추가된 곡 반환
     const { data, error } = await supabase
       .from('pieces')
       .select(`
@@ -25,10 +34,10 @@ export async function GET(request: NextRequest) {
       .limit(limit)
 
     if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-    return NextResponse.json({ data, total: data?.length || 0 })
+    const mapped = mapPieceRows(data)
+    return NextResponse.json({ data: mapped, total: mapped.length })
   }
 
-  // RPC 함수로 전문검색 (tsvector + pg_trgm)
   const { data, error } = await supabase.rpc('search_pieces', {
     search_query: q || '',
     filter_period: period,
@@ -37,8 +46,12 @@ export async function GET(request: NextRequest) {
     result_limit: limit,
   })
 
-  if (error) {
-    // RPC가 아직 없으면 폴백: ILIKE 검색
+  if (!error) {
+    const mapped = mapPieceRows(data)
+    return NextResponse.json({ data: mapped, total: mapped.length })
+  }
+
+  const baseQuery = () => {
     const query = supabase
       .from('pieces')
       .select(`
@@ -46,18 +59,48 @@ export async function GET(request: NextRequest) {
         composer:composers(id, name, name_ko, period)
       `)
 
-    if (q) {
-      query.ilike('title', `%${q}%`)
-    }
     if (period) query.eq('period', period)
     if (difficulty) query.eq('difficulty_level', difficulty)
     if (composerId) query.eq('composer_id', composerId)
-
-    const { data: fallbackData, error: fallbackError } = await query.limit(limit)
-
-    if (fallbackError) return NextResponse.json({ error: fallbackError.message }, { status: 500 })
-    return NextResponse.json({ data: fallbackData, total: fallbackData?.length || 0 })
+    return query
   }
 
-  return NextResponse.json({ data, total: data?.length || 0 })
+  let fallbackRows: any[] = []
+  if (q) {
+    const [titleRes, composerRes] = await Promise.all([
+      baseQuery().ilike('title', `%${q}%`).limit(limit),
+      supabase
+        .from('composers')
+        .select('id')
+        .or(`name.ilike.%${q}%,name_ko.ilike.%${q}%`)
+        .limit(limit),
+    ])
+
+    if (titleRes.error) {
+      return NextResponse.json({ error: titleRes.error.message }, { status: 500 })
+    }
+
+    fallbackRows = titleRes.data || []
+
+    const composerIds = (composerRes.data || []).map((c: { id: string }) => c.id)
+    if (composerIds.length > 0) {
+      const composerPieceRes = await baseQuery().in('composer_id', composerIds).limit(limit)
+      if (composerPieceRes.error) {
+        return NextResponse.json({ error: composerPieceRes.error.message }, { status: 500 })
+      }
+      const merged = new Map<string, any>()
+      for (const row of fallbackRows) merged.set(row.id, row)
+      for (const row of composerPieceRes.data || []) merged.set(row.id, row)
+      fallbackRows = Array.from(merged.values())
+    }
+  } else {
+    const fallbackRes = await baseQuery().limit(limit)
+    if (fallbackRes.error) {
+      return NextResponse.json({ error: fallbackRes.error.message }, { status: 500 })
+    }
+    fallbackRows = fallbackRes.data || []
+  }
+
+  const mapped = mapPieceRows(fallbackRows).slice(0, limit)
+  return NextResponse.json({ data: mapped, total: mapped.length })
 }
