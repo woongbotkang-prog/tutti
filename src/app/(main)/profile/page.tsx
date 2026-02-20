@@ -67,6 +67,13 @@ export default function ProfilePage() {
     region: { name: string } | null
     instruments: Array<{ instrument: { name: string } | null }>
   }>>([])
+  const [activityStats, setActivityStats] = useState({
+    totalGigs: 0,
+    totalApplicationsSent: 0,
+    acceptedApplications: 0,
+    reviews: 0,
+  })
+
   // 기존 프로필 불러오기
   useEffect(() => {
     const loadProfile = async () => {
@@ -122,8 +129,49 @@ export default function ProfilePage() {
         console.error('내 공고 불러오기 실패:', e)
       }
     }
+    const loadActivityStats = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) return
+
+        // 올린 공고 총 개수
+        const { count: gigsCount } = await supabase
+          .from('gigs')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+
+        // 보낸 지원서 총 개수
+        const { count: applicationsSentCount } = await supabase
+          .from('applications')
+          .select('*', { count: 'exact', head: true })
+          .eq('applicant_id', user.id)
+
+        // 수락된 지원서 개수
+        const { count: acceptedCount } = await supabase
+          .from('applications')
+          .select('*', { count: 'exact', head: true })
+          .eq('applicant_id', user.id)
+          .eq('status', 'accepted')
+
+        // 리뷰 개수 (given_by = current user)
+        const { count: reviewsCount } = await supabase
+          .from('reviews')
+          .select('*', { count: 'exact', head: true })
+          .eq('given_by', user.id)
+
+        setActivityStats({
+          totalGigs: gigsCount || 0,
+          totalApplicationsSent: applicationsSentCount || 0,
+          acceptedApplications: acceptedCount || 0,
+          reviews: reviewsCount || 0,
+        })
+      } catch (e) {
+        console.error('활동 통계 불러오기 실패:', e)
+      }
+    }
     loadProfile()
     loadMyGigs()
+    loadActivityStats()
   }, [])
 
   const toggleInstrument = (instrument: string) => {
@@ -508,6 +556,29 @@ export default function ProfilePage() {
             </div>
           </div>
         )}
+
+        {/* 활동 통계 */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <h2 className="font-bold text-gray-900 mb-4">활동 통계</h2>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-4 text-center">
+              <p className="text-2xl font-black text-indigo-600">{activityStats.totalGigs}</p>
+              <p className="text-xs text-gray-600 mt-1">올린 공고</p>
+            </div>
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 text-center">
+              <p className="text-2xl font-black text-purple-600">{activityStats.totalApplicationsSent}</p>
+              <p className="text-xs text-gray-600 mt-1">보낸 지원</p>
+            </div>
+            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 text-center">
+              <p className="text-2xl font-black text-green-600">{activityStats.acceptedApplications}</p>
+              <p className="text-xs text-gray-600 mt-1">수락된 지원</p>
+            </div>
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-4 text-center">
+              <p className="text-2xl font-black text-amber-600">{activityStats.reviews}</p>
+              <p className="text-xs text-gray-600 mt-1">작성한 리뷰</p>
+            </div>
+          </div>
+        </div>
 
         {/* 내가 올린 공고 */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
