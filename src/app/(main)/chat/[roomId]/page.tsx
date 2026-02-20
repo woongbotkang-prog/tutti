@@ -247,15 +247,17 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
 
   if (loading) return (
     <div className="flex flex-col h-screen bg-gray-50">
-      <header className="bg-white px-4 py-4 flex items-center gap-3 border-b border-gray-100 shrink-0">
-        <Link href="/chat">
-          <button className="text-gray-500 hover:text-gray-700" aria-label="채팅 목록으로">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M19 12H5M12 19l-7-7 7-7"/>
-            </svg>
-          </button>
-        </Link>
-        <div className="h-5 w-24 bg-gray-200 rounded animate-pulse" />
+      <header className="bg-white border-b border-gray-100 shrink-0">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
+          <Link href="/chat">
+            <button className="text-gray-500 hover:text-gray-700" aria-label="채팅 목록으로">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+            </button>
+          </Link>
+          <div className="h-5 w-24 bg-gray-200 rounded animate-pulse" />
+        </div>
       </header>
       <div className="flex-1 px-4 py-4 space-y-3">
         {[1, 2, 3].map(i => (
@@ -272,7 +274,8 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       {/* 헤더 */}
-      <header className="bg-white px-4 py-4 flex items-center gap-3 border-b border-gray-100 shrink-0">
+      <header className="bg-white border-b border-gray-100 shrink-0">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
         <Link href="/chat">
           <button className="text-gray-500 hover:text-gray-700" aria-label="채팅 목록으로">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -291,7 +294,7 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
             {connectionStatus === 'connecting' ? '연결 중...' : '연결 끊김'}
           </span>
         )}
-      </header>
+      </div></header>
 
       {/* 리뷰 작성 배너 */}
       {shouldShowReviewPrompt && applicationId && (

@@ -41,8 +41,10 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
         instrument:instruments(id, name)
       ),
       gig_pieces:gig_pieces(
-        id, piece_id, text_input, sort_order, notes,
-        piece:pieces(id, title, composer_name, composer_name_ko, period)
+        id, piece_id, text_input, order_index, notes,
+        piece:pieces(id, title, period,
+          composer:composers(name_ko, name_en)
+        )
       )
     `)
     .eq('id', params.id)
@@ -138,7 +140,7 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
               <p className="text-xs font-bold text-purple-500 mb-2">연주 곡목</p>
               <div className="space-y-1.5">
                 {gig.gig_pieces
-                  .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                  .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
                   .map((gp: any, idx: number) => (
                     <div key={gp.id} className="flex items-start gap-2">
                       <span className="text-xs font-bold text-purple-400 mt-0.5 w-4">{idx + 1}</span>
@@ -146,8 +148,8 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
                         <p className="text-sm font-bold text-purple-700">
                           {gp.piece?.title || gp.text_input}
                         </p>
-                        {(gp.piece?.composer_name_ko || gp.piece?.composer_name) && (
-                          <p className="text-xs text-purple-500">{gp.piece.composer_name_ko || gp.piece.composer_name}</p>
+                        {(gp.piece?.composer?.name_ko || gp.piece?.composer?.name_en) && (
+                          <p className="text-xs text-purple-500">{gp.piece.composer.name_ko || gp.piece.composer.name_en}</p>
                         )}
                         {gp.piece?.period && (
                           <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-200/50 text-purple-600 inline-block mt-0.5">

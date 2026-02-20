@@ -262,13 +262,15 @@ export default function GigsPage() {
     <div className="min-h-screen bg-gray-50 pb-24">
 
       {/* 헤더 — TUTTI 로고 + 공고 올리기 */}
-      <header className="bg-white px-4 py-4 flex items-center justify-between sticky top-0 z-20 border-b border-gray-100">
-        <Link href="/">
-          <span className="text-xl font-black text-indigo-600 tracking-tight">TUTTI</span>
-        </Link>
-        <Link href="/gigs/new">
-          <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">+ 공고 올리기</Button>
-        </Link>
+      <header className="bg-white sticky top-0 z-20 border-b border-gray-100">
+        <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+          <Link href="/">
+            <span className="text-xl font-black text-indigo-600 tracking-tight">TUTTI</span>
+          </Link>
+          <Link href="/gigs/new">
+            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">+ 공고 올리기</Button>
+          </Link>
+        </div>
       </header>
 
       {/* 탭 */}

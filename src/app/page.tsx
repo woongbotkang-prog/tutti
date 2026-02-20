@@ -16,7 +16,7 @@ export default async function HomePage() {
     .select(`
       id, title, gig_type, is_project, piece_name, gig_pieces_count, created_at,
       region:regions(name),
-      gig_pieces(id, text_input, piece:pieces(title, period, composer:composers(name, name_ko)))
+      gig_pieces(id, text_input, piece:pieces(title, period, composer:composers(name_en, name_ko)))
     `)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
@@ -28,7 +28,7 @@ export default async function HomePage() {
     .select(`
       id, title, piece_name, gig_pieces_count, created_at,
       region:regions(name),
-      gig_pieces(id, text_input, piece:pieces(title, period, composer:composers(name, name_ko)))
+      gig_pieces(id, text_input, piece:pieces(title, period, composer:composers(name_en, name_ko)))
     `)
     .eq('status', 'active')
     .eq('is_project', true)

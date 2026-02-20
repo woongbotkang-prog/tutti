@@ -708,7 +708,7 @@ export async function fetchPublicMusicianProfile(userId: string): Promise<Public
         id, skill_level, years_of_experience,
         instrument:instruments(id, name)
       ),
-      repertoire:user_repertoires(
+      repertoire:user_repertoire(
         id, composer_name, piece_name, performance_ready,
         composer:composers(name_ko, name_en)
       )

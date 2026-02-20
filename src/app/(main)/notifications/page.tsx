@@ -245,8 +245,8 @@ export default function NotificationsPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
-      <header className="bg-white px-4 py-4 border-b border-gray-100 sticky top-0 z-20">
-        <div className="flex items-center justify-between mb-4">
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-20"><div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center justify-between mb-3 w-full">
           <h1 className="text-lg font-black text-gray-900">알림</h1>
           <div className="flex items-center gap-2">
             {unreadCount > 0 && (
@@ -287,7 +287,7 @@ export default function NotificationsPage() {
             </button>
           ))}
         </div>
-      </header>
+      </div></header>
 
       <main className="max-w-lg mx-auto">
         {filteredNotifications.length === 0 ? (

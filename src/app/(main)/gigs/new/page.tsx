@@ -124,7 +124,7 @@ export default function NewGigPage() {
           gig_id: gig.id,
           piece_id: p.piece_id || null,
           text_input: p.text_input,
-          sort_order: idx,
+          order_index: idx,
           notes: p.notes || null,
         }))
       )

@@ -157,7 +157,7 @@ export default function ProfilePage() {
         const { count: reviewsCount } = await supabase
           .from('reviews')
           .select('*', { count: 'exact', head: true })
-          .eq('given_by', user.id)
+          .eq('reviewer_id', user.id)
 
         setActivityStats({
           totalGigs: gigsCount || 0,

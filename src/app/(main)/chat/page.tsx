@@ -128,18 +128,21 @@ export default function ChatListPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-white pb-20">
-      <header className="px-4 py-4 border-b border-gray-100">
-        <h1 className="text-lg font-black text-gray-900">채팅</h1>
+    <div className="min-h-screen bg-gray-50 pb-20">
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-20">
+        <div className="max-w-lg mx-auto px-4 py-3">
+          <h1 className="text-lg font-black text-gray-900">채팅</h1>
+        </div>
       </header>
 
+      <main className="max-w-lg mx-auto">
       {rooms.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 px-8 text-center">
           <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center mb-4">
@@ -186,6 +189,7 @@ export default function ChatListPage() {
           ))}
         </ul>
       )}
+      </main>
     </div>
   )
 }
