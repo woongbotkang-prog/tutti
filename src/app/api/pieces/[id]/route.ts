@@ -52,6 +52,13 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
+    const { createClient } = await import('@/lib/supabase/server')
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
+    }
+
     const body = (await request.json()) as UpdatePieceRequest
 
     const piece = await updatePiece(params.id, body)
@@ -85,6 +92,13 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   try {
+    const { createClient } = await import('@/lib/supabase/server')
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return NextResponse.json({ error: '로그인이 필요합니다.' }, { status: 401 })
+    }
+
     await deletePiece(params.id)
 
     return NextResponse.json(null, { status: 204 })

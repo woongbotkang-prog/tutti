@@ -1,4 +1,5 @@
 // API: GET /api/tags/autocomplete (태그 자동완성)
+export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { autocompleteTag } from '@/lib/supabase/pieces-queries'

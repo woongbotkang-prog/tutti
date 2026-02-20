@@ -1,4 +1,5 @@
 // API: GET /api/composers/autocomplete (작곡가 자동완성)
+export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { autocompleteComposer } from '@/lib/supabase/pieces-queries'

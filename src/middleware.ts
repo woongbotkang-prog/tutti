@@ -14,6 +14,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/reviews/write') ||
     pathname.startsWith('/repertoire') ||
     pathname.startsWith('/applications') ||
+    pathname.startsWith('/notifications') ||
     pathname === '/gigs/new' ||
     pathname.includes('/apply') ||
     pathname.match(/\/gigs\/.*\/edit/);

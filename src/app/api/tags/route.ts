@@ -1,4 +1,5 @@
 // API: GET /api/tags (태그 조회)
+export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { getTagsByCategory, getAllActiveTags } from '@/lib/supabase/pieces-queries'

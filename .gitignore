@@ -35,3 +35,4 @@ next-env.d.ts
 # claude
 claude_output.log
 claude_prompt.txt
+.claude/
