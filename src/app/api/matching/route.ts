@@ -34,9 +34,19 @@ export async function GET() {
       })
 
       if (error) {
-        console.warn('RPC function error (may not exist yet):', error)
-        // Fallback to empty array if function doesn't exist
-        return NextResponse.json({ data: [] })
+        console.warn('find_matching_gigs RPC error:', error)
+
+        if (error.code === 'PGRST202' || error.message?.includes('find_matching_gigs')) {
+          return NextResponse.json(
+            { error: '추천 기능이 아직 준비되지 않았습니다.', code: 'MATCHING_NOT_READY' },
+            { status: 503 }
+          )
+        }
+
+        return NextResponse.json(
+          { error: '추천 공고를 불러오는 중 오류가 발생했습니다.', code: 'MATCHING_RPC_FAILED' },
+          { status: 500 }
+        )
       }
 
       return NextResponse.json({
@@ -44,8 +54,10 @@ export async function GET() {
       })
     } catch (rpcError) {
       console.warn('RPC call error:', rpcError)
-      // Fallback to empty array if function doesn't exist
-      return NextResponse.json({ data: [] })
+      return NextResponse.json(
+        { error: '추천 공고를 불러오는 중 오류가 발생했습니다.', code: 'MATCHING_RPC_EXCEPTION' },
+        { status: 500 }
+      )
     }
   } catch (error) {
     console.error('Matching API error:', error)
