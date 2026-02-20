@@ -726,7 +726,7 @@ export async function fetchPublicMusicianProfile(userId: string): Promise<Public
     .select(
       `
       id, score, comment, created_at,
-      reviewer:reviewer_id(display_name, avatar_url)
+      reviewer:user_profiles!reviews_reviewer_id_fkey(display_name, avatar_url)
       `
     )
     .eq('reviewee_id', userId)

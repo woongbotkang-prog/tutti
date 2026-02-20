@@ -85,7 +85,6 @@ export default function NewGigPage() {
         title: title.trim(),
         description: description.trim() || null,
         region_id: regionIds[0] || null,
-        region_ids: regionIds,
         min_skill_level: minLevel,
         is_paid: false,
         is_project: isProject,

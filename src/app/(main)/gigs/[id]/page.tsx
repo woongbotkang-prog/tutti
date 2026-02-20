@@ -34,7 +34,7 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
     .from('gigs')
     .select(`
       *,
-      author:user_profiles(id, display_name, avatar_url, manner_temperature),
+      author:user_profiles!gigs_user_id_fkey(id, display_name, avatar_url, manner_temperature),
       region:regions(id, name),
       instruments:gig_instruments(
         id, count_needed, notes,
