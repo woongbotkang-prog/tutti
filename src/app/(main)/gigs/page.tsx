@@ -82,7 +82,7 @@ function GigCard({ gig }: { gig: GigListItem }) {
                     : 'bg-emerald-100 text-emerald-700'
                 }`}
               >
-                {gig.gig_type === 'hiring' ? '단원 모집' : '팀 찾기'}
+                {gig.gig_type === 'hiring' ? '연주자 모집' : '팀 찾기'}
               </span>
             )}
             {gig.is_paid && (
@@ -255,7 +255,7 @@ export default function GigsPage() {
           {[
             { key: 'all',     label: '전체' },
             { key: 'project', label: '🎼 프로젝트' },
-            { key: 'hiring',  label: '단원 모집' },
+            { key: 'hiring',  label: '연주자 모집' },
             { key: 'seeking', label: '팀 찾기' },
           ].map(tab => (
             <button

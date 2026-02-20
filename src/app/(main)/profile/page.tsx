@@ -10,6 +10,20 @@ import { Input } from '@/components/ui/input'
 import type { SkillLevel } from '@/types'
 
 const INSTRUMENTS = ['바이올린', '비올라', '첼로', '콘트라베이스', '플루트', '오보에', '클라리넷', '바순', '호른', '트럼펫', '트롬본', '튜바', '피아노', '하프', '타악기']
+const PERIODS: { value: string; label: string }[] = [
+  { value: 'baroque', label: '바로크' },
+  { value: 'classical', label: '고전' },
+  { value: 'romantic', label: '낭만' },
+  { value: 'modern', label: '근현대' },
+  { value: 'contemporary', label: '현대' },
+]
+const GENRES: { value: string; label: string }[] = [
+  { value: 'orchestral', label: '오케스트라' },
+  { value: 'chamber', label: '실내악' },
+  { value: 'solo', label: '독주' },
+  { value: 'opera', label: '오페라' },
+  { value: 'choral', label: '합창' },
+]
 const REGIONS = ['서울', '경기', '인천', '부산', '대구', '대전', '광주', '울산', '세종', '강원', '충북', '충남', '전북', '전남', '경북', '경남', '제주']
 const LEVELS: { value: SkillLevel; label: string; desc: string }[] = [
   { value: 'beginner', label: '입문', desc: '취미로 시작한 지 얼마 안 됨' },
@@ -39,6 +53,9 @@ export default function ProfilePage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [userType, setUserType] = useState<string | null>(null)
+  const [preferredPeriods, setPreferredPeriods] = useState<string[]>([])
+  const [preferredGenres, setPreferredGenres] = useState<string[]>([])
   const [myGigs, setMyGigs] = useState<Array<{
     id: string
     gig_type: 'hiring' | 'seeking'
@@ -60,6 +77,7 @@ export default function ProfilePage() {
           setBio(profile.bio || '')
           setAvatarUrl(profile.avatar_url || null)
           setMannerTemperature(profile.manner_temperature || 36.5)
+          setUserType(profile.user_type || null)
           if (profile.region) {
             setSelectedRegion(profile.region.name || '')
           }
@@ -72,6 +90,21 @@ export default function ProfilePage() {
               setPrimaryLevel(primary.skill_level)
             } else if (profile.instruments[0]?.skill_level) {
               setPrimaryLevel(profile.instruments[0].skill_level)
+            }
+          }
+          // 단체 음악적 정체성 불러오기
+          if (profile.user_type === 'organization') {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+              const { data: musicPrefs } = await supabase
+                .from('organization_music_preferences')
+                .select('preferred_periods, preferred_genres')
+                .eq('organization_id', user.id)
+                .single()
+              if (musicPrefs) {
+                setPreferredPeriods(musicPrefs.preferred_periods || [])
+                setPreferredGenres(musicPrefs.preferred_genres || [])
+              }
             }
           }
         }
@@ -98,6 +131,18 @@ export default function ProfilePage() {
       prev.includes(instrument)
         ? prev.filter(i => i !== instrument)
         : [...prev, instrument]
+    )
+  }
+
+  const togglePeriod = (period: string) => {
+    setPreferredPeriods(prev =>
+      prev.includes(period) ? prev.filter(p => p !== period) : [...prev, period]
+    )
+  }
+
+  const toggleGenre = (genre: string) => {
+    setPreferredGenres(prev =>
+      prev.includes(genre) ? prev.filter(g => g !== genre) : [...prev, genre]
     )
   }
 
@@ -188,6 +233,21 @@ export default function ProfilePage() {
           isPrimary: idx === 0,
         }))
       )
+
+      // 단체 음악적 정체성 저장
+      if (userType === 'organization') {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user && (preferredPeriods.length > 0 || preferredGenres.length > 0)) {
+          await supabase
+            .from('organization_music_preferences')
+            .upsert({
+              organization_id: user.id,
+              preferred_periods: preferredPeriods,
+              preferred_genres: preferredGenres,
+              updated_at: new Date().toISOString(),
+            })
+        }
+      }
 
       setSuccess(true)
       setTimeout(() => setSuccess(false), 3000)
@@ -401,6 +461,54 @@ export default function ProfilePage() {
           <p className="text-xs text-gray-400 mt-2">활동을 통해 매너온도가 올라가요</p>
         </div>
 
+        {/* 음악적 정체성 (단체 전용) */}
+        {userType === 'organization' && (
+          <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm space-y-4">
+            <div>
+              <h2 className="font-bold text-gray-900">음악적 정체성</h2>
+              <p className="text-xs text-gray-400 mt-0.5">단체의 음악적 방향성을 설정하면 더 정확한 매칭이 가능해요</p>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 block mb-2">선호 시대</label>
+              <div className="flex flex-wrap gap-2">
+                {PERIODS.map(p => (
+                  <button
+                    key={p.value}
+                    onClick={() => togglePeriod(p.value)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                      preferredPeriods.includes(p.value)
+                        ? 'bg-purple-600 text-white border-purple-600'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-purple-300'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700 block mb-2">주요 장르</label>
+              <div className="flex flex-wrap gap-2">
+                {GENRES.map(g => (
+                  <button
+                    key={g.value}
+                    onClick={() => toggleGenre(g.value)}
+                    className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                      preferredGenres.includes(g.value)
+                        ? 'bg-purple-600 text-white border-purple-600'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-purple-300'
+                    }`}
+                  >
+                    {g.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 내가 올린 공고 */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
@@ -421,7 +529,7 @@ export default function ProfilePage() {
                         <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
                           gig.gig_type === 'hiring' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
                         }`}>
-                          {gig.gig_type === 'hiring' ? '단원 모집' : '팀 찾기'}
+                          {gig.gig_type === 'hiring' ? '연주자 모집' : '팀 찾기'}
                         </span>
                         <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
                           gig.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'

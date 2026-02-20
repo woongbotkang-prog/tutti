@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import AddPieceModal from '@/components/AddPieceModal'
 import type { GigType, SkillLevel } from '@/types'
 
 const INSTRUMENTS = ['바이올린', '비올라', '첼로', '콘트라베이스', '플루트', '오보에', '클라리넷', '바순', '호른', '트럼펫', '트롬본', '튜바', '피아노', '하프', '타악기']
@@ -35,7 +36,8 @@ export default function NewGigPage() {
   const [error, setError] = useState<string | null>(null)
   // 프로젝트 모드
   const [isProject, setIsProject] = useState(false)
-  const [pieceName, setPieceName] = useState('')
+  const [pieces, setPieces] = useState<Array<{piece_id?: string; text_input: string; composer_name?: string; period?: string; notes?: string}>>([])
+  const [showPieceModal, setShowPieceModal] = useState(false)
 
   const toggleInstrument = (i: string) =>
     setSelectedInstruments(p => {
@@ -81,7 +83,7 @@ export default function NewGigPage() {
         min_skill_level: minLevel,
         is_paid: isPaid,
         is_project: isProject,
-        piece_name: isProject && pieceName.trim() ? pieceName.trim() : null,
+        piece_name: isProject && pieces.length > 0 ? pieces[0].text_input : null,
         max_applicants: Object.values(selectedInstruments).reduce((sum, n) => sum + n, 0) || parseInt(maxApplicants) || 1,
         event_date: eventDate || null,
         status: 'active',
@@ -115,6 +117,19 @@ export default function NewGigPage() {
       }
     }
 
+    // 곡 연결
+    if (gig && pieces.length > 0) {
+      await supabase.from('gig_pieces').insert(
+        pieces.map((p, idx) => ({
+          gig_id: gig.id,
+          piece_id: p.piece_id || null,
+          text_input: p.text_input,
+          sort_order: idx,
+          notes: p.notes || null,
+        }))
+      )
+    }
+
     router.push(`/gigs/${gig!.id}`)
   }
 
@@ -140,7 +155,7 @@ export default function NewGigPage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <h2 className="font-bold text-gray-900 mb-3">공고 유형</h2>
           <div className="grid grid-cols-2 gap-3">
-            {([['hiring', '단원 모집', '단원 모집합니다! 연주자를 찾고 있어요'], ['seeking', '팀 찾기', '합류할 팀을 직접 찾을게요']] as const).map(([val, label, desc]) => (
+            {([['hiring', '연주자 모집', '연주자 모집합니다! 팀에 참여할 연주자를 찾고 있어요'], ['seeking', '팀 찾기', '합류할 팀을 직접 찾을게요']] as const).map(([val, label, desc]) => (
               <button
                 key={val}
                 type="button"
@@ -179,15 +194,48 @@ export default function NewGigPage() {
             </div>
           </button>
           {isProject && (
-            <div className="mt-3">
-              <Input
-                label="연주 곡명"
-                placeholder="예: 베토벤 교향곡 9번, 드보르작 첼로 협주곡..."
-                value={pieceName}
-                onChange={e => setPieceName(e.target.value)}
-              />
+            <div className="mt-3 space-y-3">
+              <button
+                type="button"
+                onClick={() => setShowPieceModal(true)}
+                className="w-full px-4 py-3 rounded-xl bg-purple-50 border-2 border-purple-200 text-purple-700 font-medium hover:bg-purple-100 transition-colors"
+              >
+                + 곡 추가
+              </button>
+
+              {pieces.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-xs font-medium text-gray-500">선택된 곡</p>
+                  <div className="space-y-1.5">
+                    {pieces.map((piece, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2.5 bg-purple-50 rounded-lg text-sm">
+                        <div className="flex-1">
+                          <p className="font-medium text-gray-900">{piece.text_input}</p>
+                          {piece.composer_name && (
+                            <p className="text-xs text-gray-500">{piece.composer_name}</p>
+                          )}
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setPieces(pieces.filter((_, i) => i !== idx))}
+                          className="ml-2 px-2 py-1 text-xs text-red-600 hover:bg-red-50 rounded"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
+
+          <AddPieceModal
+            isOpen={showPieceModal}
+            onClose={() => setShowPieceModal(false)}
+            pieces={pieces}
+            onPiecesChange={setPieces}
+          />
         </div>
 
         {/* 기본 정보 */}

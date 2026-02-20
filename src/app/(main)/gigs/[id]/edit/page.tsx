@@ -171,7 +171,7 @@ export default function EditGigPage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <h2 className="font-bold text-gray-900 mb-3">공고 유형</h2>
           <div className="grid grid-cols-2 gap-3">
-            {([['hiring', '구인', '단원/연주자 모집'], ['seeking', '구직', '팀/오케스트라 찾기']] as const).map(([val, label, desc]) => (
+            {([['hiring', '구인', '연주자 모집'], ['seeking', '구직', '팀/오케스트라 찾기']] as const).map(([val, label, desc]) => (
               <button
                 key={val}
                 type="button"
@@ -192,7 +192,7 @@ export default function EditGigPage() {
           <h2 className="font-bold text-gray-900">기본 정보</h2>
           <Input
             label="제목"
-            placeholder="예: 바이올린 2파트 단원 모집"
+            placeholder="예: 바이올린 2파트 연주자 모집"
             value={title}
             onChange={e => setTitle(e.target.value)}
             required

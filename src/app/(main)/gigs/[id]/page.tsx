@@ -39,6 +39,10 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
       instruments:gig_instruments(
         id, count_needed, notes,
         instrument:instruments(id, name)
+      ),
+      gig_pieces:gig_pieces(
+        id, piece_id, text_input, sort_order, notes,
+        piece:pieces(id, title, composer_name, composer_name_ko, period)
       )
     `)
     .eq('id', params.id)
@@ -118,7 +122,7 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
               <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                 gig.gig_type === 'hiring' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
               }`}>
-                {gig.gig_type === 'hiring' ? '단원 모집' : '팀 찾기'}
+                {gig.gig_type === 'hiring' ? '연주자 모집' : '팀 찾기'}
               </span>
             )}
             {gig.is_paid ? (
@@ -128,7 +132,37 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
             )}
           </div>
 
-          {gig.is_project && gig.piece_name && (
+          {/* 연주 곡목 */}
+          {gig.gig_pieces && gig.gig_pieces.length > 0 && (
+            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl px-4 py-3 mb-3">
+              <p className="text-xs font-bold text-purple-500 mb-2">연주 곡목</p>
+              <div className="space-y-1.5">
+                {gig.gig_pieces
+                  .sort((a: any, b: any) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+                  .map((gp: any, idx: number) => (
+                    <div key={gp.id} className="flex items-start gap-2">
+                      <span className="text-xs font-bold text-purple-400 mt-0.5 w-4">{idx + 1}</span>
+                      <div>
+                        <p className="text-sm font-bold text-purple-700">
+                          {gp.piece?.title || gp.text_input}
+                        </p>
+                        {(gp.piece?.composer_name_ko || gp.piece?.composer_name) && (
+                          <p className="text-xs text-purple-500">{gp.piece.composer_name_ko || gp.piece.composer_name}</p>
+                        )}
+                        {gp.piece?.period && (
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-200/50 text-purple-600 inline-block mt-0.5">
+                            #{({'baroque':'바로크','classical':'고전','romantic':'낭만','modern':'근현대','contemporary':'현대'} as Record<string,string>)[gp.piece.period] || gp.piece.period}
+                          </span>
+                        )}
+                        {gp.notes && <p className="text-xs text-purple-400 mt-0.5">{gp.notes}</p>}
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+          {/* Fallback for legacy single piece_name */}
+          {(!gig.gig_pieces || gig.gig_pieces.length === 0) && gig.is_project && gig.piece_name && (
             <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl px-3 py-2 mb-2">
               <p className="text-sm font-bold text-purple-700">🎼 {gig.piece_name}</p>
             </div>
