@@ -469,7 +469,6 @@ export async function upsertProfile(profileData: {
   if (!user) throw new Error('로그인이 필요합니다.')
 
   const updateData: Record<string, unknown> = {
-    id: user.id,
     display_name: profileData.displayName,
     bio: profileData.bio || null,
     region_id: profileData.regionId || null,
@@ -479,9 +478,25 @@ export async function upsertProfile(profileData: {
     updateData.avatar_url = profileData.avatarUrl
   }
 
+  const { data: updated, error: updateError } = await supabase
+    .from('user_profiles')
+    .update(updateData)
+    .eq('id', user.id)
+    .select()
+    .maybeSingle()
+
+  if (updateError) throw updateError
+  if (updated) return updated
+
+  const insertData: Record<string, unknown> = {
+    id: user.id,
+    user_type: (user.user_metadata?.user_type as string) || 'individual',
+    ...updateData,
+  }
+
   const { data, error } = await supabase
     .from('user_profiles')
-    .upsert(updateData)
+    .insert(insertData)
     .select()
     .single()
 

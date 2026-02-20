@@ -24,20 +24,15 @@ const getMannerTemperatureColor = (temp: number) => {
   return 'text-blue-500'
 }
 
-export default function MusicianProfilePage({ params }: { params: Promise<{ id: string }> }) {
+export default function MusicianProfilePage({ params }: { params: { id: string } }) {
   const router = useRouter()
-  const [musicianId, setMusicianId] = useState<string | null>(null)
   const [profile, setProfile] = useState<PublicMusicianProfile | null>(null)
   const [currentUser, setCurrentUser] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    params.then((p) => setMusicianId(p.id))
-  }, [params])
-
-  useEffect(() => {
-    if (!musicianId) return
+    if (!params.id) return
 
     const loadData = async () => {
       try {
@@ -45,7 +40,7 @@ export default function MusicianProfilePage({ params }: { params: Promise<{ id: 
         const { data: { user } } = await supabase.auth.getUser()
         setCurrentUser(user?.id || null)
 
-        const musicianProfile = await fetchPublicMusicianProfile(musicianId)
+        const musicianProfile = await fetchPublicMusicianProfile(params.id)
         if (!musicianProfile) {
           setError('연주자 프로필을 찾을 수 없습니다.')
           setProfile(null)
@@ -62,7 +57,7 @@ export default function MusicianProfilePage({ params }: { params: Promise<{ id: 
     }
 
     loadData()
-  }, [musicianId])
+  }, [params.id])
 
   if (loading) {
     return (
