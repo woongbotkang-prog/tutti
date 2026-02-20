@@ -124,7 +124,7 @@ export default function ProfilePage() {
               const { data: musicPrefs } = await supabase
                 .from('organization_music_preferences')
                 .select('preferred_periods, preferred_genres')
-                .eq('organization_id', user.id)
+                .eq('org_user_id', user.id)
                 .single()
               if (musicPrefs) {
                 setPreferredPeriods(musicPrefs.preferred_periods || [])
@@ -307,11 +307,11 @@ export default function ProfilePage() {
           await supabase
             .from('organization_music_preferences')
             .upsert({
-              organization_id: user.id,
+              org_user_id: user.id,
               preferred_periods: preferredPeriods,
               preferred_genres: preferredGenres,
               updated_at: new Date().toISOString(),
-            })
+            }, { onConflict: 'org_user_id' })
         }
       }
 
