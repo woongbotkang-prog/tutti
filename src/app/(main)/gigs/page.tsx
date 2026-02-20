@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { Search, SlidersHorizontal, X } from 'lucide-react'
+import { Search, SlidersHorizontal, X, Filter } from 'lucide-react'
 import { fetchGigs, type GigListItem, type SortOption } from '@/lib/supabase/queries'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -15,19 +15,30 @@ const INSTRUMENTS = [
 ]
 const REGIONS = ['전체', '서울', '경기', '인천', '부산', '대구', '대전', '광주', '기타']
 
+const PERIODS = ['전체', 'baroque', 'classical', 'romantic', 'modern', 'contemporary']
+const PERIOD_LABELS: Record<string, string> = {
+  '전체': '전체',
+  'baroque': '바로크',
+  'classical': '고전',
+  'romantic': '낭만',
+  'modern': '근현대',
+  'contemporary': '현대',
+}
+
+const SKILL_LEVELS = ['전체', 'beginner', 'elementary', 'intermediate', 'advanced', 'professional']
+const LEVEL_LABELS: Record<string, string> = {
+  'beginner': '입문',
+  'elementary': '초급',
+  'intermediate': '중급',
+  'advanced': '고급',
+  'professional': '전문가',
+}
+
 const SORT_OPTIONS: { key: SortOption; label: string }[] = [
   { key: 'latest',   label: '최신순' },
   { key: 'expiring', label: '마감임박' },
   { key: 'popular',  label: '인기순' },
 ]
-
-const LEVEL_LABELS: Record<string, string> = {
-  beginner: '입문',
-  elementary: '초급',
-  intermediate: '중급',
-  advanced: '고급',
-  professional: '전문가',
-}
 
 const PAGE_SIZE = 10
 
@@ -134,9 +145,12 @@ export default function GigsPage() {
   const [activeTab, setActiveTab]             = useState<'all' | 'hiring' | 'seeking' | 'project'>('all')
   const [selectedInstrument, setSelectedInstrument] = useState('전체')
   const [selectedRegion, setSelectedRegion]   = useState('전체')
+  const [selectedPeriod, setSelectedPeriod]   = useState('전체')
+  const [selectedLevel, setSelectedLevel]     = useState('전체')
   const [sortBy, setSortBy]                   = useState<SortOption>('latest')
   const [searchQuery, setSearchQuery]         = useState('')
   const [searchInput, setSearchInput]         = useState('')  // 디바운스용 입력 버퍼
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
 
   const [gigs, setGigs]       = useState<GigListItem[]>([])
   const [page, setPage]       = useState(0)
@@ -172,6 +186,8 @@ export default function GigsPage() {
         isProject: activeTab === 'project' ? true : undefined,
         instrumentName: selectedInstrument,
         regionName: selectedRegion,
+        period: selectedPeriod !== '전체' ? selectedPeriod : undefined,
+        minSkillLevel: selectedLevel !== '전체' ? selectedLevel : undefined,
         searchQuery,
         sortBy,
         page: 0,
@@ -187,7 +203,7 @@ export default function GigsPage() {
     } finally {
       setLoading(false)
     }
-  }, [activeTab, selectedInstrument, selectedRegion, searchQuery, sortBy])
+  }, [activeTab, selectedInstrument, selectedRegion, selectedPeriod, selectedLevel, searchQuery, sortBy])
 
   // ── 더보기 ────────────────────────────────────────────────────
   const loadMore = async () => {
@@ -200,6 +216,8 @@ export default function GigsPage() {
         isProject: activeTab === 'project' ? true : undefined,
         instrumentName: selectedInstrument,
         regionName: selectedRegion,
+        period: selectedPeriod !== '전체' ? selectedPeriod : undefined,
+        minSkillLevel: selectedLevel !== '전체' ? selectedLevel : undefined,
         searchQuery,
         sortBy,
         page: nextPage,
@@ -225,12 +243,16 @@ export default function GigsPage() {
   const isFiltered =
     selectedInstrument !== '전체' ||
     selectedRegion !== '전체' ||
+    selectedPeriod !== '전체' ||
+    selectedLevel !== '전체' ||
     sortBy !== 'latest' ||
     searchQuery.trim() !== ''
 
   const resetFilters = () => {
     setSelectedInstrument('전체')
     setSelectedRegion('전체')
+    setSelectedPeriod('전체')
+    setSelectedLevel('전체')
     setSortBy('latest')
     clearSearch()
   }
@@ -357,6 +379,64 @@ export default function GigsPage() {
           </>
         )}
       </div>
+
+      {/* 고급 필터 토글 */}
+      <div className="bg-white border-b border-gray-100 px-4 py-2 max-w-lg mx-auto">
+        <button
+          onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+          className={`flex items-center gap-2 text-xs font-medium px-3 py-1.5 rounded-lg border transition-colors ${
+            showAdvancedFilters
+              ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+              : 'bg-white border-gray-200 text-gray-600 hover:border-gray-300'
+          }`}
+        >
+          <Filter className="w-3.5 h-3.5" />
+          고급 필터
+        </button>
+      </div>
+
+      {/* 고급 필터 섹션 */}
+      {showAdvancedFilters && (
+        <div className="bg-gray-50 border-b border-gray-100 px-4 py-3 max-w-lg mx-auto">
+          <div className="grid grid-cols-2 gap-3">
+            {/* 시대 선택 */}
+            <div>
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">시대</label>
+              <select
+                value={selectedPeriod}
+                onChange={e => setSelectedPeriod(e.target.value)}
+                className={`w-full text-[11px] border rounded-lg px-2.5 py-1.5 bg-white focus:outline-none transition-colors ${
+                  selectedPeriod !== '전체'
+                    ? 'border-indigo-400 text-indigo-700 bg-indigo-50'
+                    : 'border-gray-300 text-gray-600'
+                }`}
+              >
+                {PERIODS.map(p => (
+                  <option key={p} value={p}>{PERIOD_LABELS[p]}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* 실력 선택 */}
+            <div>
+              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">실력</label>
+              <select
+                value={selectedLevel}
+                onChange={e => setSelectedLevel(e.target.value)}
+                className={`w-full text-[11px] border rounded-lg px-2.5 py-1.5 bg-white focus:outline-none transition-colors ${
+                  selectedLevel !== '전체'
+                    ? 'border-indigo-400 text-indigo-700 bg-indigo-50'
+                    : 'border-gray-300 text-gray-600'
+                }`}
+              >
+                {SKILL_LEVELS.map(l => (
+                  <option key={l} value={l}>{l === '전체' ? '전체' : LEVEL_LABELS[l]}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* 결과 수 표시 */}
       {!loading && (

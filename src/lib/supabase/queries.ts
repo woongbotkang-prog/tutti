@@ -11,6 +11,8 @@ export interface FetchGigsParams {
   gigType?: 'hiring' | 'seeking'
   instrumentName?: string
   regionName?: string
+  period?: string
+  minSkillLevel?: string
   searchQuery?: string
   sortBy?: SortOption
   page?: number
@@ -48,6 +50,8 @@ export async function fetchGigs({
   gigType,
   instrumentName,
   regionName,
+  period,
+  minSkillLevel,
   searchQuery,
   sortBy = 'latest',
   page = 0,
@@ -88,7 +92,22 @@ export async function fetchGigs({
     regionId = regionData?.id ?? null
   }
 
-  // Step 3: 메인 쿼리
+  // Step 3: 시대 필터 — period로 gig_pieces를 통해 pieces 필터링
+  let periodFilteredGigIds: string[] | null = null
+  if (period) {
+    const { data: gp } = await supabase
+      .from('gig_pieces')
+      .select('gig_id, piece:pieces(period)')
+
+    if (gp && gp.length > 0) {
+      periodFilteredGigIds = gp
+        .filter((item: any) => item.piece?.period === period)
+        .map((item: any) => item.gig_id)
+      if (periodFilteredGigIds.length === 0) return { data: [], hasMore: false }
+    }
+  }
+
+  // Step 4: 메인 쿼리
   let query = supabase
     .from('gigs')
     .select(`
@@ -105,7 +124,32 @@ export async function fetchGigs({
   if (isProject === true) query = query.eq('is_project', true)
   if (regionId) query = query.eq('region_id', regionId)
   if (allowedGigIds) query = query.in('id', allowedGigIds)
-  if (searchQuery?.trim()) query = query.ilike('title', `%${searchQuery.trim()}%`)
+  if (periodFilteredGigIds) query = query.in('id', periodFilteredGigIds)
+
+  // 검색: 제목 또는 곡 이름에서 검색
+  // Supabase에서 OR 조건을 처리하기 위해 별도로 조회
+  if (searchQuery?.trim()) {
+    const searchTerm = `%${searchQuery.trim()}%`
+
+    // 제목 또는 곡명 필터 - 두 개의 쿼리로 분리
+    const { data: titleMatches } = await supabase
+      .from('gigs')
+      .select('id')
+      .ilike('title', searchTerm)
+
+    const { data: pieceMatches } = await supabase
+      .from('gigs')
+      .select('id')
+      .ilike('piece_name', searchTerm)
+
+    const searchMatchIds = new Set([
+      ...(titleMatches ?? []).map(r => r.id),
+      ...(pieceMatches ?? []).map(r => r.id),
+    ])
+
+    if (searchMatchIds.size === 0) return { data: [], hasMore: false }
+    query = query.in('id', Array.from(searchMatchIds))
+  }
 
   // 정렬
   if (sortBy === 'latest') {

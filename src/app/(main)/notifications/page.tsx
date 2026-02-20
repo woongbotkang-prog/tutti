@@ -1,9 +1,11 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { fetchMyNotifications, markNotificationRead, markAllNotificationsRead } from '@/lib/supabase/queries'
+import { createClient } from '@/lib/supabase/client'
 import type { NotificationType } from '@/types'
+import { Volume2, VolumeX } from 'lucide-react'
 
 interface NotificationItem {
   id: string
@@ -15,6 +17,8 @@ interface NotificationItem {
   created_at: string
 }
 
+type CategoryTab = 'all' | 'application' | 'message' | 'system'
+
 const NOTIFICATION_ICONS: Record<string, string> = {
   application_received: '📩',
   application_accepted: '✅',
@@ -23,6 +27,20 @@ const NOTIFICATION_ICONS: Record<string, string> = {
   gig_expiring: '⏰',
   review_request: '⭐',
   system: '📢',
+}
+
+const CATEGORY_TABS: { key: CategoryTab; label: string }[] = [
+  { key: 'all', label: '전체' },
+  { key: 'application', label: '지원' },
+  { key: 'message', label: '메시지' },
+  { key: 'system', label: '시스템' },
+]
+
+function getCategoryFromType(type: NotificationType): CategoryTab {
+  if (type.startsWith('application_')) return 'application'
+  if (type === 'new_message') return 'message'
+  if (type === 'system' || type === 'gig_expiring') return 'system'
+  return 'all'
 }
 
 function timeAgo(dateStr: string): string {
@@ -38,10 +56,63 @@ function timeAgo(dateStr: string): string {
   return new Date(dateStr).toLocaleDateString('ko-KR')
 }
 
+function getDateGroup(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const notifDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  const diff = today.getTime() - notifDate.getTime()
+  const days = diff / (1000 * 60 * 60 * 24)
+
+  if (days === 0) return '오늘'
+  if (days === 1) return '어제'
+  if (days < 7) return '이번 주'
+  return '이전'
+}
+
+function playNotificationSound() {
+  // Use a simple beep sound - can be replaced with actual audio file
+  if (typeof window !== 'undefined' && 'AudioContext' in window) {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
+      const oscillator = audioContext.createOscillator()
+      const gainNode = audioContext.createGain()
+      oscillator.connect(gainNode)
+      gainNode.connect(audioContext.destination)
+      oscillator.frequency.value = 800
+      oscillator.type = 'sine'
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1)
+      oscillator.start(audioContext.currentTime)
+      oscillator.stop(audioContext.currentTime + 0.1)
+    } catch (e) {
+      console.debug('Could not play notification sound:', e)
+    }
+  }
+}
+
 export default function NotificationsPage() {
   const router = useRouter()
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [loading, setLoading] = useState(true)
+  const [activeCategory, setActiveCategory] = useState<CategoryTab>('all')
+  const [soundEnabled, setSoundEnabled] = useState(true)
+  const realtimeSubscribed = useRef(false)
+
+  // Load sound preference from localStorage
+  useEffect(() => {
+    const saved = localStorage.getItem('notification_sound_enabled')
+    if (saved !== null) {
+      setSoundEnabled(JSON.parse(saved))
+    }
+  }, [])
+
+  // Save sound preference to localStorage
+  const handleSoundToggle = () => {
+    const newValue = !soundEnabled
+    setSoundEnabled(newValue)
+    localStorage.setItem('notification_sound_enabled', JSON.stringify(newValue))
+  }
 
   useEffect(() => {
     const load = async () => {
@@ -57,19 +128,65 @@ export default function NotificationsPage() {
     load()
   }, [])
 
+  // Setup Realtime subscription for new notifications
+  useEffect(() => {
+    if (realtimeSubscribed.current) return
+
+    const setupRealtime = async () => {
+      try {
+        const supabase = createClient()
+        const { data: { user } } = await supabase.auth.getUser()
+
+        if (!user) return
+
+        const channel = supabase
+          .channel(`notifications:${user.id}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${user.id}`,
+            },
+            (payload) => {
+              const newNotification = payload.new as NotificationItem
+              // Add animation by prepending
+              setNotifications((prev) => [newNotification, ...prev])
+              // Play sound if enabled
+              if (soundEnabled) {
+                playNotificationSound()
+              }
+            }
+          )
+          .subscribe()
+
+        realtimeSubscribed.current = true
+
+        return () => {
+          channel.unsubscribe()
+        }
+      } catch (e) {
+        console.error('Failed to setup realtime:', e)
+      }
+    }
+
+    setupRealtime()
+  }, [soundEnabled])
+
   const handleClick = async (notification: NotificationItem) => {
     if (!notification.is_read) {
       try {
         await markNotificationRead(notification.id)
-        setNotifications(prev =>
-          prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n)
+        setNotifications((prev) =>
+          prev.map((n) => (n.id === notification.id ? { ...n, is_read: true } : n))
         )
       } catch (e) {
         console.error(e)
       }
     }
 
-    // 알림 타입에 따라 이동
+    // Navigate based on notification type
     const data = notification.data
     if (data?.room_id) {
       router.push(`/chat/${data.room_id}`)
@@ -83,13 +200,32 @@ export default function NotificationsPage() {
   const handleMarkAllRead = async () => {
     try {
       await markAllNotificationsRead()
-      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+      setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })))
     } catch (e) {
       console.error(e)
     }
   }
 
-  const unreadCount = notifications.filter(n => !n.is_read).length
+  // Filter notifications by category
+  const filteredNotifications =
+    activeCategory === 'all'
+      ? notifications
+      : notifications.filter((n) => getCategoryFromType(n.type) === activeCategory)
+
+  // Group by date
+  const groupedNotifications = filteredNotifications.reduce(
+    (acc, notif) => {
+      const group = getDateGroup(notif.created_at)
+      if (!acc[group]) acc[group] = []
+      acc[group].push(notif)
+      return acc
+    },
+    {} as Record<string, NotificationItem[]>
+  )
+
+  const dateGroupOrder = ['오늘', '어제', '이번 주', '이전']
+
+  const unreadCount = notifications.filter((n) => !n.is_read).length
 
   if (loading) {
     return (
@@ -101,48 +237,108 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <header className="bg-white px-4 py-4 flex items-center justify-between border-b border-gray-100 sticky top-0 z-20">
-        <h1 className="text-lg font-black text-gray-900">알림</h1>
-        {unreadCount > 0 && (
-          <button onClick={handleMarkAllRead} className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-            모두 읽음
-          </button>
-        )}
+      {/* Header */}
+      <header className="bg-white px-4 py-4 border-b border-gray-100 sticky top-0 z-20">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-lg font-black text-gray-900">알림</h1>
+          <div className="flex items-center gap-2">
+            {unreadCount > 0 && (
+              <button
+                onClick={handleMarkAllRead}
+                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+              >
+                모두 읽음
+              </button>
+            )}
+            <button
+              onClick={handleSoundToggle}
+              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+              title={soundEnabled ? '알림음 끄기' : '알림음 켜기'}
+            >
+              {soundEnabled ? (
+                <Volume2 className="w-5 h-5 text-indigo-600" />
+              ) : (
+                <VolumeX className="w-5 h-5 text-gray-400" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* Category Tabs */}
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
+          {CATEGORY_TABS.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setActiveCategory(tab.key)}
+              className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                activeCategory === tab.key
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </header>
 
       <main className="max-w-lg mx-auto">
-        {notifications.length === 0 ? (
+        {filteredNotifications.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-gray-400">
             <span className="text-4xl mb-3">🔔</span>
-            <p className="text-sm">알림이 없습니다</p>
+            <p className="text-sm">
+              {activeCategory === 'all' ? '알림이 없습니다' : '해당 카테고리의 알림이 없습니다'}
+            </p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-100">
-            {notifications.map(notification => (
-              <button
-                key={notification.id}
-                onClick={() => handleClick(notification)}
-                className={`w-full text-left px-4 py-3.5 flex items-start gap-3 transition-colors hover:bg-gray-50 ${
-                  !notification.is_read ? 'bg-indigo-50/50' : 'bg-white'
-                }`}
-              >
-                <span className="text-xl mt-0.5 flex-shrink-0">
-                  {NOTIFICATION_ICONS[notification.type] || '📢'}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className={`text-sm ${!notification.is_read ? 'font-bold text-gray-900' : 'font-medium text-gray-700'}`}>
-                    {notification.title}
-                  </p>
-                  {notification.body && (
-                    <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{notification.body}</p>
-                  )}
-                  <p className="text-xs text-gray-400 mt-1">{timeAgo(notification.created_at)}</p>
-                </div>
-                {!notification.is_read && (
-                  <span className="w-2 h-2 bg-indigo-500 rounded-full mt-2 flex-shrink-0" />
-                )}
-              </button>
-            ))}
+          <div className="space-y-4 p-4">
+            {dateGroupOrder.map(
+              (dateGroup) =>
+                groupedNotifications[dateGroup] && (
+                  <div key={dateGroup}>
+                    <h2 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 px-1">
+                      {dateGroup}
+                    </h2>
+                    <div className="space-y-1 rounded-2xl bg-white border border-gray-100 overflow-hidden divide-y divide-gray-100">
+                      {groupedNotifications[dateGroup].map((notification) => (
+                        <button
+                          key={notification.id}
+                          onClick={() => handleClick(notification)}
+                          className={`w-full text-left px-4 py-3.5 flex items-start gap-3 transition-colors hover:bg-gray-50 active:bg-gray-100 ${
+                            !notification.is_read ? 'bg-indigo-50' : 'bg-white'
+                          }`}
+                        >
+                          <span className="text-xl mt-0.5 flex-shrink-0">
+                            {NOTIFICATION_ICONS[notification.type] || '📢'}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p
+                              className={`text-sm ${
+                                !notification.is_read
+                                  ? 'font-bold text-gray-900'
+                                  : 'font-medium text-gray-700'
+                              }`}
+                            >
+                              {notification.title}
+                            </p>
+                            {notification.body && (
+                              <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
+                                {notification.body}
+                              </p>
+                            )}
+                            <p className="text-xs text-gray-400 mt-1">
+                              {timeAgo(notification.created_at)}
+                            </p>
+                          </div>
+                          {!notification.is_read && (
+                            <span className="w-2 h-2 bg-indigo-500 rounded-full mt-2 flex-shrink-0 animate-pulse" />
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )
+            )}
           </div>
         )}
       </main>
