@@ -177,7 +177,7 @@ export default function GigsPage() {
     try {
       const result = await fetchGigs({
         gigType: activeTab === 'project' ? undefined : (activeTab !== 'all' ? activeTab : undefined),
-        isProject: activeTab === 'project' ? true : undefined,
+        isProject: activeTab === 'project' ? true : (activeTab === 'hiring' || activeTab === 'seeking') ? false : undefined,
         instrumentName: selectedInstrument,
         regionName: selectedRegion,
         period: selectedPeriod !== '전체' ? selectedPeriod : undefined,
@@ -207,7 +207,7 @@ export default function GigsPage() {
     try {
       const result = await fetchGigs({
         gigType: activeTab === 'project' ? undefined : (activeTab !== 'all' ? activeTab : undefined),
-        isProject: activeTab === 'project' ? true : undefined,
+        isProject: activeTab === 'project' ? true : (activeTab === 'hiring' || activeTab === 'seeking') ? false : undefined,
         instrumentName: selectedInstrument,
         regionName: selectedRegion,
         period: selectedPeriod !== '전체' ? selectedPeriod : undefined,

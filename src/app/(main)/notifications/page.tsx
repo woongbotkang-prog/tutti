@@ -5,7 +5,6 @@ import { useRouter } from 'next/navigation'
 import { fetchMyNotifications, markNotificationRead, markAllNotificationsRead } from '@/lib/supabase/queries'
 import { createClient } from '@/lib/supabase/client'
 import type { NotificationType } from '@/types'
-import { Volume2, VolumeX } from 'lucide-react'
 
 interface NotificationItem {
   id: string
@@ -70,49 +69,12 @@ function getDateGroup(dateStr: string): string {
   return '이전'
 }
 
-function playNotificationSound() {
-  // Use a simple beep sound - can be replaced with actual audio file
-  if (typeof window !== 'undefined' && 'AudioContext' in window) {
-    try {
-      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)()
-      const oscillator = audioContext.createOscillator()
-      const gainNode = audioContext.createGain()
-      oscillator.connect(gainNode)
-      gainNode.connect(audioContext.destination)
-      oscillator.frequency.value = 800
-      oscillator.type = 'sine'
-      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime)
-      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1)
-      oscillator.start(audioContext.currentTime)
-      oscillator.stop(audioContext.currentTime + 0.1)
-    } catch (e) {
-      console.debug('Could not play notification sound:', e)
-    }
-  }
-}
-
 export default function NotificationsPage() {
   const router = useRouter()
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
   const [loading, setLoading] = useState(true)
   const [activeCategory, setActiveCategory] = useState<CategoryTab>('all')
-  const [soundEnabled, setSoundEnabled] = useState(true)
   const realtimeSubscribed = useRef(false)
-
-  // Load sound preference from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem('notification_sound_enabled')
-    if (saved !== null) {
-      setSoundEnabled(JSON.parse(saved))
-    }
-  }, [])
-
-  // Save sound preference to localStorage
-  const handleSoundToggle = () => {
-    const newValue = !soundEnabled
-    setSoundEnabled(newValue)
-    localStorage.setItem('notification_sound_enabled', JSON.stringify(newValue))
-  }
 
   useEffect(() => {
     const load = async () => {
@@ -155,12 +117,7 @@ export default function NotificationsPage() {
             (payload) => {
               if (!mounted) return
               const newNotification = payload.new as NotificationItem
-              // Add animation by prepending
               setNotifications((prev) => [newNotification, ...prev])
-              // Play sound if enabled
-              if (soundEnabled) {
-                playNotificationSound()
-              }
             }
           )
           .subscribe()
@@ -179,7 +136,7 @@ export default function NotificationsPage() {
         channel.unsubscribe()
       }
     }
-  }, [soundEnabled])
+  }, [])
 
   const handleClick = async (notification: NotificationItem) => {
     if (!notification.is_read) {
@@ -245,10 +202,10 @@ export default function NotificationsPage() {
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
-      <header className="bg-white border-b border-gray-100 sticky top-0 z-20"><div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center justify-between mb-3 w-full">
-          <h1 className="text-lg font-black text-gray-900">알림</h1>
-          <div className="flex items-center gap-2">
+      <header className="bg-white border-b border-gray-100 sticky top-0 z-20">
+        <div className="max-w-lg mx-auto px-4 pt-3 pb-2">
+          <div className="flex items-center justify-between">
+            <h1 className="text-lg font-black text-gray-900">알림</h1>
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
@@ -257,37 +214,26 @@ export default function NotificationsPage() {
                 모두 읽음
               </button>
             )}
-            <button
-              onClick={handleSoundToggle}
-              className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
-              title={soundEnabled ? '알림음 끄기' : '알림음 켜기'}
-            >
-              {soundEnabled ? (
-                <Volume2 className="w-5 h-5 text-indigo-600" />
-              ) : (
-                <VolumeX className="w-5 h-5 text-gray-400" />
-              )}
-            </button>
+          </div>
+
+          {/* Category Tabs */}
+          <div className="flex gap-2 overflow-x-auto pt-2 pb-2">
+            {CATEGORY_TABS.map((tab) => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveCategory(tab.key)}
+                className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                  activeCategory === tab.key
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
         </div>
-
-        {/* Category Tabs */}
-        <div className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4">
-          {CATEGORY_TABS.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveCategory(tab.key)}
-              className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                activeCategory === tab.key
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div></header>
+      </header>
 
       <main className="max-w-lg mx-auto">
         {filteredNotifications.length === 0 ? (

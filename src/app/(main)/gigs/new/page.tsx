@@ -94,8 +94,10 @@ export default function NewGigPage() {
         event_date: eventDate || null,
         status: 'active',
         image_urls: gigImages.length > 0 ? gigImages : [],
-        rehearsal_frequency: rehearsalFrequency || null,
-        sheet_music_provided: sheetMusicProvided,
+        // TODO: rehearsal_frequency, sheet_music_provided 컬럼이 DB에 적용된 후 다시 추가
+        // (migration: supabase/migrations/20260220140000_gig_extra_fields.sql)
+        // rehearsal_frequency: rehearsalFrequency || null,
+        // sheet_music_provided: sheetMusicProvided,
         expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
       })
       .select('id')

@@ -11,10 +11,17 @@ import UserAvatar from '@/components/UserAvatar'
 import type { SkillLevel } from '@/types'
 
 const AVATAR_EMOJIS = [
+  // 클래식 악기 (20개)
   '🎻', '🎹', '🎺', '🎷', '🥁',
-  '🎸', '🪕', '🪗', '🎵', '🎶',
-  '🎼', '🎭', '🎨', '🦁', '🐺',
-  '🦊', '🌙', '⭐', '🌸', '🎯',
+  '🎸', '🪕', '🪗', '🪈', '📯',
+  '🪘', '🎵', '🎶', '🎼', '🔔',
+  '🎤', '🎧', '🪇', '🎙️', '🪈',
+  // 음악/공연 (10개)
+  '🎭', '🎪', '🏛️', '📜', '🎬',
+  '💫', '✨', '🌟', '⭐', '🎯',
+  // 작곡가/캐릭터 (10개)
+  '🧔', '👨‍🎨', '🎩', '👴', '🧑‍🎤',
+  '👨‍🏫', '🧙‍♂️', '🤴', '👨‍💼', '🎅',
 ]
 
 const INSTRUMENTS = ['바이올린', '비올라', '첼로', '콘트라베이스', '플루트', '오보에', '클라리넷', '바순', '호른', '트럼펫', '트롬본', '튜바', '피아노', '하프', '타악기']
@@ -205,7 +212,7 @@ export default function ProfilePage() {
     )
   }
 
-  const MAX_AVATAR_SIZE = 2 * 1024 * 1024 // 2MB
+  const MAX_AVATAR_SIZE = 10 * 1024 * 1024 // 10MB
   const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -217,7 +224,7 @@ export default function ProfilePage() {
       return
     }
     if (file.size > MAX_AVATAR_SIZE) {
-      setError('사진 크기는 2MB 이하만 가능해요.')
+      setError('사진 크기는 10MB 이하만 가능해요.')
       return
     }
 
@@ -388,16 +395,16 @@ export default function ProfilePage() {
                 </div>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center justify-center gap-3">
               <button
                 type="button"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="text-xs text-indigo-600 hover:underline font-medium"
+                className="text-sm text-indigo-600 hover:underline font-medium"
               >
                 이모지 선택
               </button>
               <span className="text-gray-300">|</span>
-              <label className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer font-medium">
+              <label className="text-sm text-gray-500 hover:text-gray-700 cursor-pointer font-medium">
                 사진 업로드
                 <input
                   type="file"

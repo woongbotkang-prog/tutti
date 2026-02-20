@@ -296,7 +296,7 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
   if (loading) return (
     <div className="flex flex-col h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-100 shrink-0">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
           <Link href="/chat">
             <button className="text-gray-500 hover:text-gray-700" aria-label="채팅 목록으로">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -323,7 +323,7 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
     <div className="flex flex-col h-screen bg-gray-50">
       {/* 헤더 */}
       <header className="bg-white border-b border-gray-100 shrink-0">
-        <div className="max-w-lg mx-auto px-4 py-3 flex items-center gap-3">
+        <div className="max-w-2xl mx-auto px-4 py-3 flex items-center gap-3">
         <Link href="/chat">
           <button className="text-gray-500 hover:text-gray-700" aria-label="채팅 목록으로">
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -387,7 +387,7 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
           const isMine = msg.sender_id === userId
           return (
             <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-              <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 ${
+              <div className={`max-w-[70%] sm:max-w-[60%] rounded-2xl px-4 py-2.5 ${
                 isMine ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white text-gray-900 rounded-bl-sm shadow-sm'
               } ${msg.id.startsWith('temp-') ? 'opacity-70' : ''}`}>
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
@@ -415,7 +415,7 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
 
       {/* 입력창 — shrink-0 + 고정 패딩으로 흔들림 방지 */}
       <div className="border-t border-gray-100 px-4 py-3 bg-white shrink-0" style={{ minHeight: '60px' }}>
-        <div className="flex items-end gap-2 max-w-lg mx-auto">
+        <div className="flex items-end gap-2 max-w-2xl mx-auto">
           <textarea
             value={newMessage}
             onChange={e => { setNewMessage(e.target.value); handleTyping() }}

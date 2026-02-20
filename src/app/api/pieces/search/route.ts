@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 import { createClient } from '@/lib/supabase/server'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -45,7 +47,7 @@ export async function GET(request: NextRequest) {
       `)
 
     if (q) {
-      query.or(`title.ilike.%${q}%,composers.name.ilike.%${q}%,composers.name_ko.ilike.%${q}%`)
+      query.ilike('title', `%${q}%`)
     }
     if (period) query.eq('period', period)
     if (difficulty) query.eq('difficulty_level', difficulty)
