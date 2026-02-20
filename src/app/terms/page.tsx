@@ -81,7 +81,37 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="font-bold text-gray-900 mb-2">7. 약관의 변경</h2>
+            <h2 className="font-bold text-gray-900 mb-2">제7조 (사진 업로드 및 콘텐츠 관리)</h2>
+            <ol className="list-decimal pl-5 space-y-2">
+              <li>
+                이용자가 서비스에 업로드하는 사진, 이미지 및 기타 콘텐츠에 대한 저작권, 초상권 등 모든 법적 책임은 해당 콘텐츠를 게시한 이용자에게 있습니다.
+              </li>
+              <li>
+                이용자는 타인의 초상, 저작물, 악보 등 권리가 포함된 콘텐츠를 권리자의 사전 동의 없이 업로드할 수 없습니다.
+              </li>
+              <li>
+                회사는 이용자가 게시한 콘텐츠를 사전에 심사할 의무를 지지 않으며, 이용자가 게시한 콘텐츠로 인해 발생하는 법적 분쟁에 대해 책임을 지지 않습니다.
+              </li>
+              <li>
+                정보통신망 이용촉진 및 정보보호 등에 관한 법률 제44조의2에 따라, 권리를 침해당한 자는 해당 콘텐츠의 삭제 또는 임시조치를 요청할 수 있습니다.
+                <p className="mt-1 font-medium text-gray-900">신고 접수: report@tutti.kr</p>
+              </li>
+              <li>
+                회사는 삭제 또는 임시조치 요청을 접수한 경우, 지체 없이 해당 콘텐츠에 대한 접근을 차단하거나 삭제하는 등 필요한 조치를 취합니다.
+              </li>
+              <li>
+                임시조치 기간은 최대 30일로 하며, 해당 기간 내에 당사자 간 합의가 이루어지지 않는 경우 관련 법령에 따라 처리합니다.
+              </li>
+              <li>
+                <p className="text-red-700 font-medium bg-red-50 rounded-lg px-3 py-2">
+                  특히 악보, 음원 등 음악 저작물은 저작권법에 의해 강력히 보호되므로, 권리자의 허락 없는 업로드는 민·형사상 책임을 수반할 수 있습니다.
+                </p>
+              </li>
+            </ol>
+          </section>
+
+          <section>
+            <h2 className="font-bold text-gray-900 mb-2">8. 약관의 변경</h2>
             <p>
               본 약관은 필요에 따라 변경될 수 있으며, 변경 시 서비스 내 공지합니다.
               변경된 약관에 동의하지 않는 경우 서비스 이용을 중단하고 회원 탈퇴할 수 있습니다.
@@ -89,7 +119,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="font-bold text-gray-900 mb-2">8. 분쟁 해결</h2>
+            <h2 className="font-bold text-gray-900 mb-2">9. 분쟁 해결</h2>
             <p>
               본 약관과 관련된 분쟁은 대한민국 법률을 따르며,
               관할 법원은 민사소송법에 따른 법원으로 합니다.
@@ -97,7 +127,7 @@ export default function TermsPage() {
           </section>
 
           <section>
-            <h2 className="font-bold text-gray-900 mb-2">9. 연락처</h2>
+            <h2 className="font-bold text-gray-900 mb-2">10. 연락처</h2>
             <p>문의: tutti.app.contact@gmail.com</p>
           </section>
 

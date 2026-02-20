@@ -31,7 +31,7 @@ export default function PrivacyPage() {
             <h2 className="font-bold text-gray-900 mb-2">1. 수집하는 개인정보 항목</h2>
             <ul className="list-disc pl-5 space-y-1">
               <li><strong>필수:</strong> 이메일 주소, 비밀번호(암호화 저장)</li>
-              <li><strong>선택:</strong> 닉네임(활동명), 연주 악기, 실력 수준, 활동 지역, 자기소개</li>
+              <li><strong>선택:</strong> 닉네임(활동명), 연주 악기, 실력 수준, 활동 지역, 자기소개, 공고 관련 이미지 (사진 파일)</li>
               <li><strong>자동 수집:</strong> 서비스 이용 기록, 접속 로그</li>
             </ul>
           </section>
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
             <h2 className="font-bold text-gray-900 mb-2">2. 개인정보의 수집·이용 목적</h2>
             <ul className="list-disc pl-5 space-y-1">
               <li>회원 가입 및 관리 (본인 확인, 계정 운영)</li>
-              <li>서비스 제공 (연주자 매칭, 공고 등록·지원, 채팅)</li>
+              <li>서비스 제공 (연주자 매칭, 공고 등록·지원, 채팅, 공고 이미지 게시)</li>
               <li>서비스 개선 및 통계 분석</li>
             </ul>
           </section>
@@ -51,6 +51,15 @@ export default function PrivacyPage() {
               회원 탈퇴 시까지 보유하며, 탈퇴 즉시 지체 없이 파기합니다.
               단, 관계 법령에 따라 보존이 필요한 경우 해당 기간 동안 보관합니다.
             </p>
+          </section>
+
+          <section>
+            <h2 className="font-bold text-gray-900 mb-2">이미지 데이터 처리</h2>
+            <ul className="list-disc pl-5 space-y-1 text-sm text-gray-700">
+              <li>이용자가 공고에 업로드하는 이미지는 서비스 제공 목적으로만 사용되며, 회원 탈퇴 또는 공고 삭제 시 함께 파기됩니다.</li>
+              <li>이미지 파일에 포함될 수 있는 EXIF 메타데이터(촬영 위치, 기기 정보 등)는 현재 자동으로 제거되지 않습니다. 민감한 위치 정보가 포함된 사진 업로드 시 이용자의 주의가 필요합니다.</li>
+              <li>향후 EXIF 메타데이터 자동 제거 기능을 도입할 예정입니다.</li>
+            </ul>
           </section>
 
           <section>

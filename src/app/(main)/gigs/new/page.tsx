@@ -41,6 +41,7 @@ export default function NewGigPage() {
   const [gigImages, setGigImages] = useState<string[]>([])
   const [rehearsalFrequency, setRehearsalFrequency] = useState('')
   const [sheetMusicProvided, setSheetMusicProvided] = useState(false)
+  const [photoTermsAgreed, setPhotoTermsAgreed] = useState(false)
 
   const toggleInstrument = (i: string) =>
     setSelectedInstruments(p => {
@@ -431,7 +432,28 @@ export default function NewGigPage() {
           </div>
         </div>
 
-        <Button type="submit" size="full" isLoading={isLoading} className="bg-indigo-600 hover:bg-indigo-700">
+        {/* 사진 업로드 시 저작권·초상권 동의 */}
+        {gigImages.length > 0 && (
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={photoTermsAgreed}
+              onChange={e => setPhotoTermsAgreed(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+            />
+            <span className="text-sm text-gray-600">
+              사진 업로드 시 저작권·초상권 관련 안내를 확인했으며, 이에 동의합니다.
+            </span>
+          </label>
+        )}
+
+        <Button
+          type="submit"
+          size="full"
+          isLoading={isLoading}
+          disabled={gigImages.length > 0 && !photoTermsAgreed}
+          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
           공고 등록하기
         </Button>
       </form>

@@ -99,6 +99,13 @@ export default function GigImageUpload({
         <span className="text-xs text-gray-400">{images.length}/{maxImages}</span>
       </div>
 
+      {/* 저작권·초상권 경고 */}
+      <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5">
+        <p className="text-xs text-amber-800 leading-relaxed">
+          ⚠️ 업로드하는 사진의 저작권과 초상권에 대한 법적 책임은 게시자에게 있습니다. 타인의 초상, 악보, 저작물이 포함된 사진은 권리자의 동의 없이 업로드할 수 없습니다.
+        </p>
+      </div>
+
       {error && (
         <p className="text-xs text-red-500">{error}</p>
       )}
@@ -141,7 +148,7 @@ export default function GigImageUpload({
       )}
 
       <p className="text-[10px] text-gray-400">
-        업로드하는 사진의 저작권과 초상권 책임은 게시자에게 있습니다.
+        자세한 사항은 <a href="/terms" className="underline hover:text-gray-600">이용약관 제7조</a>를 참고해 주세요.
       </p>
 
       <input
