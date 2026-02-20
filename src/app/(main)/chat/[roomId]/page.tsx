@@ -31,10 +31,13 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting')
   const [applicationId, setApplicationId] = useState<string | null>(null)
   const [shouldShowReviewPrompt, setShouldShowReviewPrompt] = useState(false)
+  const [isOtherTyping, setIsOtherTyping] = useState(false)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const channelRef = useRef<RealtimeChannel | null>(null)
+  const presenceChannelRef = useRef<RealtimeChannel | null>(null)
   const messagesRef = useRef<Message[]>([])
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // messagesRef를 항상 최신으로 유지
   useEffect(() => {
@@ -119,6 +122,25 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
 
       channelRef.current = channel
 
+      // 2.5. Presence 채널 (타이핑 인디케이터)
+      const presenceChannel = supabase
+        .channel(`typing:${roomId}`)
+        .on('presence', { event: 'sync' }, () => {
+          if (!mounted) return
+          const state = presenceChannel.presenceState()
+          const others = Object.values(state).flat().filter(
+            (p: any) => p.user_id !== user.id && p.is_typing
+          )
+          setIsOtherTyping(others.length > 0)
+        })
+        .subscribe((status) => {
+          if (status !== 'SUBSCRIBED') {
+            console.debug('Presence channel status:', status)
+          }
+        })
+
+      presenceChannelRef.current = presenceChannel
+
       // 3. 채팅방 메타 정보 로드 (병렬)
       const [participantsRes, roomRes, messagesRes] = await Promise.all([
         // 상대방 이름
@@ -194,8 +216,32 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
         supabase.removeChannel(channelRef.current)
         channelRef.current = null
       }
+      if (presenceChannelRef.current) {
+        supabase.removeChannel(presenceChannelRef.current)
+        presenceChannelRef.current = null
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current)
+      }
     }
   }, [roomId, supabase]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // 타이핑 상태 broadcast
+  const broadcastTyping = useCallback((isTyping: boolean) => {
+    if (!presenceChannelRef.current || !userId) return
+    presenceChannelRef.current.track({
+      user_id: userId,
+      is_typing: isTyping,
+    })
+  }, [userId])
+
+  const handleTyping = useCallback(() => {
+    broadcastTyping(true)
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
+    typingTimeoutRef.current = setTimeout(() => {
+      broadcastTyping(false)
+    }, 2000)
+  }, [broadcastTyping])
 
   // 메시지 전송
   const handleSend = async () => {
@@ -210,6 +256,8 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
     setSending(true)
     const content = newMessage.trim()
     setNewMessage('')
+    broadcastTyping(false)
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current)
 
     // Optimistic update
     const tempId = `temp-${Date.now()}`
@@ -350,6 +398,18 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
             </div>
           )
         })}
+        {/* 타이핑 인디케이터 */}
+        {isOtherTyping && (
+          <div className="flex justify-start">
+            <div className="bg-white rounded-2xl rounded-bl-sm px-4 py-2.5 shadow-sm">
+              <div className="flex items-center gap-1">
+                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </div>
+          </div>
+        )}
         <div ref={bottomRef} />
       </div>
 
@@ -358,7 +418,7 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
         <div className="flex items-end gap-2 max-w-lg mx-auto">
           <textarea
             value={newMessage}
-            onChange={e => setNewMessage(e.target.value)}
+            onChange={e => { setNewMessage(e.target.value); handleTyping() }}
             onKeyDown={handleKeyDown}
             placeholder="메시지를 입력하세요..."
             rows={1}

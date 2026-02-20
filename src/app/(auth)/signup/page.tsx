@@ -6,17 +6,13 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import type { UserType } from '@/types'
-
-type Step = 'type' | 'info'
 
 export default function SignUpPage() {
   const router = useRouter()
   const supabase = createClient()
 
-  const [step, setStep] = useState<Step>('type')
-  const [userType, setUserType] = useState<UserType | null>(null)
+  const [userType, setUserType] = useState<UserType>('individual')
   const [displayName, setDisplayName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -25,25 +21,16 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null)
   const [agreedToPrivacy, setAgreedToPrivacy] = useState(false)
 
-  const handleTypeSelect = (type: UserType) => {
-    setUserType(type)
-    setStep('info')
-  }
-
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!userType) return
-
     setError(null)
 
-    // 이메일 형식 검증
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailRegex.test(email)) {
       setError('올바른 이메일 주소를 입력해 주세요.')
       return
     }
 
-    // 비밀번호 검증
     if (password !== passwordConfirm) {
       setError('비밀번호가 일치하지 않습니다.')
       return
@@ -57,7 +44,6 @@ export default function SignUpPage() {
       return
     }
 
-    // 닉네임/단체명 검증
     if (displayName.trim().length < 2) {
       setError(userType === 'individual' ? '닉네임은 최소 2자 이상이어야 합니다.' : '단체명은 최소 2자 이상이어야 합니다.')
       return
@@ -65,7 +51,6 @@ export default function SignUpPage() {
 
     setIsLoading(true)
 
-    // Supabase signUp - emailRedirectTo는 선택사항이므로 안전하게 처리
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -79,42 +64,25 @@ export default function SignUpPage() {
 
     if (error) {
       console.error('Signup error:', error)
-      
-      // 이미 가입된 이메일
       if (error.message?.includes('User already registered') || error.message?.includes('already exists')) {
         setError('이미 가입된 이메일입니다. 로그인을 시도해 주세요.')
-        setIsLoading(false)
-        return
-      }
-      
-      // 비밀번호 정책 위반
-      if (error.message?.includes('Password')) {
+      } else if (error.message?.includes('Password')) {
         setError('비밀번호 조건을 확인해 주세요. (영문, 숫자 포함 8자 이상)')
-        setIsLoading(false)
-        return
-      }
-      
-      // 이메일 형식 오류
-      if (error.message?.includes('email')) {
+      } else if (error.message?.includes('email')) {
         setError('올바른 이메일 주소를 입력해 주세요.')
-        setIsLoading(false)
-        return
+      } else {
+        setError(`회원가입 중 오류가 발생했습니다: ${error.message}`)
       }
-      
-      // 기타 오류
-      setError(`회원가입 중 오류가 발생했습니다: ${error.message}`)
       setIsLoading(false)
       return
     }
 
-    // 가입 성공 확인
     if (!data.user) {
       setError('회원가입에 실패했습니다. 다시 시도해 주세요.')
       setIsLoading(false)
       return
     }
 
-    console.log('Signup success:', data.user.id)
     router.push('/signup/verify-email?email=' + encodeURIComponent(email))
   }
 
@@ -123,32 +91,75 @@ export default function SignUpPage() {
       const redirectUrl = typeof window !== 'undefined'
         ? `${window.location.origin}/auth/callback`
         : 'http://localhost:3000/auth/callback'
-      
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: { redirectTo: redirectUrl },
       })
       if (error) throw error
     } catch {
-      setError('소셜 로그인 준비 중입니다. 이메일로 로그인해 주세요.')
+      setError('소셜 로그인 준비 중입니다. 이메일로 가입해 주세요.')
     }
   }
 
-  // Step 1: 유형 선택
-  if (step === 'type') {
-    return (
-      <Card className="shadow-lg border-0">
-        <CardHeader className="text-center pb-2">
-          <CardTitle className="text-2xl">TUTTI 시작하기 🎼</CardTitle>
-          <CardDescription>어떤 역할로 참여하시나요?</CardDescription>
-        </CardHeader>
+  return (
+    <div className="bg-white rounded-2xl shadow-lg border-0 overflow-hidden">
+      {/* 헤더 */}
+      <div className="text-center px-6 pt-8 pb-4">
+        <h1 className="text-2xl font-black text-gray-900">TUTTI 시작하기</h1>
+        <p className="text-sm text-gray-500 mt-1">클래식 연주자 매칭 플랫폼</p>
+      </div>
 
-        <CardContent className="space-y-4 pt-4">
-          {/* 소셜 로그인 */}
-          <div className="space-y-3">
+      <div className="px-6 pb-8 space-y-5">
+        {/* ① 나는 누구인가요? */}
+        <div>
+          <p className="text-xs font-bold text-gray-500 mb-2">나는 누구인가요?</p>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setUserType('individual')}
+              className={`flex items-center gap-2.5 p-3.5 rounded-xl border-2 transition-all ${
+                userType === 'individual'
+                  ? 'border-indigo-500 bg-indigo-50'
+                  : 'border-gray-100 hover:border-gray-200'
+              }`}
+            >
+              <span className="text-2xl">🎻</span>
+              <div className="text-left">
+                <p className={`text-sm font-bold ${userType === 'individual' ? 'text-indigo-700' : 'text-gray-900'}`}>
+                  개인 연주자
+                </p>
+                <p className="text-[10px] text-gray-400">솔로·앙상블 멤버</p>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setUserType('organization')}
+              className={`flex items-center gap-2.5 p-3.5 rounded-xl border-2 transition-all ${
+                userType === 'organization'
+                  ? 'border-indigo-500 bg-indigo-50'
+                  : 'border-gray-100 hover:border-gray-200'
+              }`}
+            >
+              <span className="text-2xl">🎼</span>
+              <div className="text-left">
+                <p className={`text-sm font-bold ${userType === 'organization' ? 'text-indigo-700' : 'text-gray-900'}`}>
+                  단체
+                </p>
+                <p className="text-[10px] text-gray-400">오케스트라·실내악단</p>
+              </div>
+            </button>
+          </div>
+        </div>
+
+        {/* ② 소셜 로그인 */}
+        <div>
+          <p className="text-xs font-bold text-gray-500 mb-2">간편 가입</p>
+          <div className="space-y-2">
             <button
               onClick={() => handleSocialLogin('kakao')}
-              className="w-full h-12 rounded-xl bg-[#FEE500] text-[#3C1E1E] font-semibold text-sm flex items-center justify-center gap-2 hover:bg-[#FDD835] transition-colors"
+              className="w-full h-11 rounded-xl bg-[#FEE500] text-[#3C1E1E] font-semibold text-sm flex items-center justify-center gap-2 hover:bg-[#FDD835] transition-colors"
             >
               <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                 <path fillRule="evenodd" clipRule="evenodd" d="M9 0.5C4.306 0.5 0.5 3.467 0.5 7.125c0 2.34 1.553 4.393 3.9 5.555L3.44 16.5a.313.313 0 00.457.34L8.63 13.8c.123.01.247.016.371.016 4.694 0 8.5-2.967 8.5-6.625C17.5 3.467 13.694.5 9 .5z" fill="currentColor"/>
@@ -158,7 +169,7 @@ export default function SignUpPage() {
 
             <button
               onClick={() => handleSocialLogin('google')}
-              className="w-full h-12 rounded-xl bg-white border border-gray-200 text-gray-700 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
+              className="w-full h-11 rounded-xl bg-white border border-gray-200 text-gray-700 font-semibold text-sm flex items-center justify-center gap-2 hover:bg-gray-50 transition-colors"
             >
               <svg width="18" height="18" viewBox="0 0 18 18">
                 <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
@@ -169,79 +180,26 @@ export default function SignUpPage() {
               Google로 시작하기
             </button>
           </div>
+        </div>
 
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-100" />
-            </div>
-            <div className="relative flex justify-center text-xs text-gray-400">
-              <span className="bg-white px-3">또는 이메일로 가입</span>
-            </div>
+        {/* 구분선 */}
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-gray-100" />
           </div>
-
-          {/* 유형 선택 */}
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => handleTypeSelect('individual')}
-              className="flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-gray-100 hover:border-indigo-400 hover:bg-indigo-50 transition-all group"
-            >
-              <span className="text-4xl">🎻</span>
-              <div className="text-center">
-                <p className="font-bold text-gray-900 group-hover:text-indigo-700">개인 연주자</p>
-                <p className="text-xs text-gray-500 mt-1">솔로이스트, 앙상블 멤버</p>
-              </div>
-            </button>
-
-            <button
-              onClick={() => handleTypeSelect('organization')}
-              className="flex flex-col items-center gap-3 p-5 rounded-2xl border-2 border-gray-100 hover:border-indigo-400 hover:bg-indigo-50 transition-all group"
-            >
-              <span className="text-4xl">🎼</span>
-              <div className="text-center">
-                <p className="font-bold text-gray-900 group-hover:text-indigo-700">단체</p>
-                <p className="text-xs text-gray-500 mt-1">오케스트라, 실내악단</p>
-              </div>
-            </button>
+          <div className="relative flex justify-center text-xs text-gray-400">
+            <span className="bg-white px-3">또는 이메일로 가입</span>
           </div>
+        </div>
 
-          <p className="text-center text-sm text-gray-500">
-            이미 계정이 있으신가요?{' '}
-            <Link href="/login" className="font-semibold text-indigo-600 hover:underline">
-              로그인
-            </Link>
-          </p>
-        </CardContent>
-      </Card>
-    )
-  }
+        {/* ③ 이메일 가입 폼 */}
+        {error && (
+          <div className="rounded-xl bg-red-50 p-3 text-sm text-red-600">
+            {error}
+          </div>
+        )}
 
-  // Step 2: 정보 입력
-  return (
-    <Card className="shadow-lg border-0">
-      <CardHeader className="pb-2">
-        <button
-          onClick={() => setStep('type')}
-          className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700 mb-2 -ml-1"
-        >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M19 12H5M12 19l-7-7 7-7"/>
-          </svg>
-          뒤로
-        </button>
-        <CardTitle className="text-xl">
-          {userType === 'individual' ? '🎻 개인 연주자' : '🎼 단체'} 가입
-        </CardTitle>
-        <CardDescription>기본 정보를 입력해 주세요</CardDescription>
-      </CardHeader>
-
-      <CardContent className="pt-2">
-        <form onSubmit={handleSignUp} className="space-y-4">
-          {error && (
-            <div className="rounded-xl bg-red-50 p-3 text-sm text-red-600">
-              {error}
-            </div>
-          )}
-
+        <form onSubmit={handleSignUp} className="space-y-3">
           <Input
             label={userType === 'individual' ? '닉네임' : '단체명'}
             placeholder={userType === 'individual' ? '활동명 또는 닉네임' : '단체 이름'}
@@ -263,7 +221,7 @@ export default function SignUpPage() {
           <Input
             type="password"
             label="비밀번호"
-            placeholder="8자 이상"
+            placeholder="영문 + 숫자 포함 8자 이상"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -300,7 +258,14 @@ export default function SignUpPage() {
             가입하기
           </Button>
         </form>
-      </CardContent>
-    </Card>
+
+        <p className="text-center text-sm text-gray-500">
+          이미 계정이 있으신가요?{' '}
+          <Link href="/login" className="font-semibold text-indigo-600 hover:underline">
+            로그인
+          </Link>
+        </p>
+      </div>
+    </div>
   )
 }

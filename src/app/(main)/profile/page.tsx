@@ -7,7 +7,15 @@ import { createClient } from '@/lib/supabase/client'
 import { fetchMyProfile, upsertProfile, upsertUserInstruments, fetchMyGigs, uploadAvatar } from '@/lib/supabase/queries'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import UserAvatar from '@/components/UserAvatar'
 import type { SkillLevel } from '@/types'
+
+const AVATAR_EMOJIS = [
+  '🎻', '🎹', '🎺', '🎷', '🥁',
+  '🎸', '🪕', '🪗', '🎵', '🎶',
+  '🎼', '🎭', '🎨', '🦁', '🐺',
+  '🦊', '🌙', '⭐', '🌸', '🎯',
+]
 
 const INSTRUMENTS = ['바이올린', '비올라', '첼로', '콘트라베이스', '플루트', '오보에', '클라리넷', '바순', '호른', '트럼펫', '트롬본', '튜바', '피아노', '하프', '타악기']
 const PERIODS: { value: string; label: string }[] = [
@@ -49,6 +57,8 @@ export default function ProfilePage() {
   const [bio, setBio] = useState('')
   const [mannerTemperature, setMannerTemperature] = useState(36.5)
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [avatarEmoji, setAvatarEmoji] = useState<string | null>(null)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const [avatarUploading, setAvatarUploading] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [deleteLoading, setDeleteLoading] = useState(false)
@@ -83,6 +93,7 @@ export default function ProfilePage() {
           setDisplayName(profile.display_name || '')
           setBio(profile.bio || '')
           setAvatarUrl(profile.avatar_url || null)
+          setAvatarEmoji((profile as any).avatar_emoji || null)
           setMannerTemperature(profile.manner_temperature || 36.5)
           setUserType(profile.user_type || null)
           if (profile.region) {
@@ -366,40 +377,90 @@ export default function ProfilePage() {
           <div className="rounded-xl bg-green-50 p-3 text-sm text-green-600">✓ 프로필이 저장됐습니다!</div>
         )}
 
-        {/* 아바타 */}
-        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm flex flex-col items-center gap-3">
-          <label className="relative cursor-pointer group">
-            {avatarUrl ? (
-              <img
-                src={avatarUrl}
-                alt="프로필 사진"
-                className="w-20 h-20 rounded-full object-cover"
-              />
-            ) : (
-              <div className="w-20 h-20 rounded-full bg-indigo-100 flex items-center justify-center text-3xl">
-                🎻
-              </div>
-            )}
-            <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0z" />
-              </svg>
+        {/* 아바타 — 이모지 선택 + 사진 업로드 */}
+        <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+          <div className="flex flex-col items-center gap-3">
+            <div className="relative">
+              <UserAvatar emoji={avatarEmoji} avatarUrl={avatarUrl} displayName={displayName} size="xl" />
+              {avatarUploading && (
+                <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
+                  <div className="animate-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full" />
+                </div>
+              )}
             </div>
-            {avatarUploading && (
-              <div className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center">
-                <div className="animate-spin w-6 h-6 border-2 border-white border-t-transparent rounded-full" />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                className="text-xs text-indigo-600 hover:underline font-medium"
+              >
+                이모지 선택
+              </button>
+              <span className="text-gray-300">|</span>
+              <label className="text-xs text-gray-500 hover:text-gray-700 cursor-pointer font-medium">
+                사진 업로드
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={handleAvatarChange}
+                  className="hidden"
+                  disabled={avatarUploading}
+                />
+              </label>
+            </div>
+          </div>
+
+          {/* 이모지 피커 */}
+          {showEmojiPicker && (
+            <div className="mt-4 pt-4 border-t border-gray-100">
+              <p className="text-xs font-medium text-gray-500 mb-2">이모지 선택</p>
+              <div className="grid grid-cols-5 gap-2">
+                {AVATAR_EMOJIS.map(emoji => (
+                  <button
+                    key={emoji}
+                    type="button"
+                    onClick={async () => {
+                      setAvatarEmoji(emoji)
+                      setShowEmojiPicker(false)
+                      // DB에 즉시 저장
+                      const { data: { user } } = await supabase.auth.getUser()
+                      if (user) {
+                        await supabase
+                          .from('user_profiles')
+                          .update({ avatar_emoji: emoji, updated_at: new Date().toISOString() })
+                          .eq('id', user.id)
+                      }
+                    }}
+                    className={`w-full aspect-square rounded-xl text-2xl flex items-center justify-center transition-all ${
+                      avatarEmoji === emoji
+                        ? 'bg-indigo-100 border-2 border-indigo-500 scale-110'
+                        : 'bg-gray-50 border border-gray-100 hover:bg-gray-100'
+                    }`}
+                  >
+                    {emoji}
+                  </button>
+                ))}
               </div>
-            )}
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              onChange={handleAvatarChange}
-              className="hidden"
-              disabled={avatarUploading}
-            />
-          </label>
-          <span className="text-xs text-gray-400">사진을 눌러 변경 (2MB 이하, JPG/PNG/WebP)</span>
+              {avatarEmoji && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    setAvatarEmoji(null)
+                    const { data: { user } } = await supabase.auth.getUser()
+                    if (user) {
+                      await supabase
+                        .from('user_profiles')
+                        .update({ avatar_emoji: null, updated_at: new Date().toISOString() })
+                        .eq('id', user.id)
+                    }
+                  }}
+                  className="mt-2 text-xs text-red-500 hover:underline"
+                >
+                  이모지 제거
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 기본 정보 */}

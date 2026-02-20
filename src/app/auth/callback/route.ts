@@ -17,14 +17,16 @@ export async function GET(request: Request) {
           .from('user_profiles')
           .select('id, user_type')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
 
         if (!profile || !profile.user_type) {
           // 신규 가입자 또는 프로필 미완성 → 온보딩
-          return NextResponse.redirect(`${origin}/onboarding`)
+          return NextResponse.redirect(`${origin}/onboarding?verified=1`)
         }
       }
-      return NextResponse.redirect(`${origin}${next}`)
+      // 이메일 인증 완료 후 → 홈으로 (환영 메시지 표시)
+      const redirectPath = next === '/' ? '/?welcome=1' : next
+      return NextResponse.redirect(`${origin}${redirectPath}`)
     }
   }
 

@@ -1,8 +1,10 @@
+import { Suspense } from 'react'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import BottomNavBar from '@/components/BottomNavBar'
 import MatchingRecommendations from '@/components/MatchingRecommendations'
+import WelcomeToast from '@/components/WelcomeToast'
 
 export const revalidate = 3600 // ISR: 1시간
 
@@ -87,6 +89,7 @@ export default async function HomePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-50 via-white to-white pb-24">
+      <Suspense fallback={null}><WelcomeToast /></Suspense>
       {/* 헤더 */}
       <header className="px-6 py-4 flex items-center justify-between max-w-lg mx-auto">
         <Link href="/">
