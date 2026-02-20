@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     result_limit: limit,
   })
 
-  if (!error && (data?.length || 0) > 0) {
+  if (!error) {
     const mapped = mapPieceRows(data)
     return NextResponse.json({ data: mapped, total: mapped.length })
   }
