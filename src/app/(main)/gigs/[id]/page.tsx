@@ -186,6 +186,8 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
               { label: '실력', value: gig.min_skill_level ? LEVEL_LABELS[gig.min_skill_level] || gig.min_skill_level : '제한없음' },
               { label: '지역', value: gig.region?.name || (gig.is_online ? '온라인' : '미지정') },
               { label: '연주일', value: gig.event_date || (gig.event_date_flexible ? '협의' : '미정') },
+              ...(gig.rehearsal_frequency ? [{ label: '연습 횟수', value: gig.rehearsal_frequency }] : []),
+              ...(gig.sheet_music_provided ? [{ label: '악보', value: '제공' }] : []),
             ].map(item => (
               <div key={item.label}>
                 <p className="text-xs text-gray-400 mb-0.5">{item.label}</p>

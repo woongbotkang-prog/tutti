@@ -39,6 +39,8 @@ export default function NewGigPage() {
   const [pieces, setPieces] = useState<Array<{piece_id?: string; text_input: string; composer_name?: string; period?: string; notes?: string}>>([])
   const [showPieceModal, setShowPieceModal] = useState(false)
   const [gigImages, setGigImages] = useState<string[]>([])
+  const [rehearsalFrequency, setRehearsalFrequency] = useState('')
+  const [sheetMusicProvided, setSheetMusicProvided] = useState(false)
 
   const toggleInstrument = (i: string) =>
     setSelectedInstruments(p => {
@@ -91,6 +93,8 @@ export default function NewGigPage() {
         event_date: eventDate || null,
         status: 'active',
         image_urls: gigImages.length > 0 ? gigImages : [],
+        rehearsal_frequency: rehearsalFrequency || null,
+        sheet_music_provided: sheetMusicProvided,
         expires_at: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(),
       })
       .select('id')
@@ -392,6 +396,39 @@ export default function NewGigPage() {
             onChange={e => setEventDate(e.target.value)}
             min={new Date().toISOString().split('T')[0]}
           />
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-1.5">예상 연습 횟수 (선택)</label>
+            <div className="flex flex-wrap gap-2">
+              {['주 1회', '주 2회', '월 2회', '월 4회', '수시', '미정'].map(freq => (
+                <button
+                  key={freq}
+                  type="button"
+                  onClick={() => setRehearsalFrequency(prev => prev === freq ? '' : freq)}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                    rehearsalFrequency === freq
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                  }`}
+                >
+                  {freq}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <button
+              type="button"
+              onClick={() => setSheetMusicProvided(p => !p)}
+              className={`flex items-center gap-3 w-full p-3 rounded-xl border-2 transition-colors ${
+                sheetMusicProvided ? 'border-indigo-400 bg-indigo-50' : 'border-gray-100 bg-gray-50'
+              }`}
+            >
+              <div className={`w-5 h-5 rounded flex items-center justify-center ${sheetMusicProvided ? 'bg-indigo-600' : 'bg-white border border-gray-300'}`}>
+                {sheetMusicProvided && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path d="M5 13l4 4L19 7"/></svg>}
+              </div>
+              <span className={`text-sm font-medium ${sheetMusicProvided ? 'text-indigo-700' : 'text-gray-600'}`}>악보 제공</span>
+            </button>
+          </div>
         </div>
 
         <Button type="submit" size="full" isLoading={isLoading} className="bg-indigo-600 hover:bg-indigo-700">
