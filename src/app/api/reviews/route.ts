@@ -26,6 +26,20 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    if (typeof score !== 'number' || score < 1 || score > 5) {
+      return NextResponse.json(
+        { error: 'Score must be between 1 and 5' },
+        { status: 400 }
+      )
+    }
+
+    if (typeof comment !== 'string' || comment.trim().length < 2 || comment.length > 1000) {
+      return NextResponse.json(
+        { error: 'Comment must be 2 to 1000 characters' },
+        { status: 400 }
+      )
+    }
+
     // Validate application exists and is accepted
     const { data: application, error: appError } = await supabase
       .from('applications')
@@ -101,7 +115,7 @@ export async function POST(request: NextRequest) {
         reviewer_id: user.id,
         reviewee_id: revieweeId,
         score,
-        comment,
+        comment: comment.trim(),
         is_blind: true,
         category_scores: category_scores || {},
       })
@@ -115,46 +129,16 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculate manner temperature change
-    let temperatureChange = 0
-    if (score >= 4) {
-      temperatureChange = 0.2
-    } else if (score >= 3) {
-      temperatureChange = 0.1
-    } else {
-      temperatureChange = -0.2
-    }
+    // Update manner temperature via SECURITY DEFINER RPC.
+    // This avoids direct updates blocked by DB trigger/RLS hardening.
+    const { error: mannerError } = await supabase.rpc('apply_manner_temperature_from_review', {
+      p_reviewee_id: revieweeId,
+      p_score: score,
+      p_review_id: review.id,
+    })
 
-    // Update reviewee's manner temperature
-    const { data: currentProfile } = await supabase
-      .from('user_profiles')
-      .select('manner_temperature')
-      .eq('id', revieweeId)
-      .single()
-
-    const newTemperature = Math.max(30, (currentProfile?.manner_temperature || 36.5) + temperatureChange)
-
-    const { error: updateError } = await supabase
-      .from('user_profiles')
-      .update({ manner_temperature: newTemperature })
-      .eq('id', revieweeId)
-
-    if (updateError) {
-      console.error('Failed to update manner temperature:', updateError)
-    }
-
-    // Log manner temperature change
-    const { error: logError } = await supabase
-      .from('manner_temperature_logs')
-      .insert({
-        user_id: revieweeId,
-        change_amount: temperatureChange,
-        reason: `review_received_${score}_stars`,
-        related_review_id: review.id,
-      })
-
-    if (logError) {
-      console.error('Failed to log manner temperature change:', logError)
+    if (mannerError) {
+      console.error('Failed to apply manner temperature via RPC:', mannerError)
     }
 
     // Check if both parties reviewed
