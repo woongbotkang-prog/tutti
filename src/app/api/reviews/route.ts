@@ -49,13 +49,32 @@ export async function POST(request: NextRequest) {
 
     // Check if user is part of the application
     const appGig = Array.isArray(application.gig) ? application.gig[0] : application.gig
-    const isGigOwner = appGig?.user_id === user.id
+
+    if (!appGig || !appGig.user_id) {
+      return NextResponse.json(
+        { error: 'Invalid application data' },
+        { status: 400 }
+      )
+    }
+
+    const isGigOwner = appGig.user_id === user.id
     const isApplicant = application.applicant_id === user.id
 
     if (!isGigOwner && !isApplicant) {
       return NextResponse.json(
         { error: 'Not authorized for this application' },
         { status: 403 }
+      )
+    }
+
+    // Get reviewee ID
+    const revieweeId = isGigOwner ? application.applicant_id : appGig.user_id
+
+    // SECURITY FIX: Prevent self-review
+    if (user.id === revieweeId) {
+      return NextResponse.json(
+        { error: 'Cannot review yourself' },
+        { status: 400 }
       )
     }
 
@@ -73,9 +92,6 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
-
-    // Get reviewee ID
-    const revieweeId = isGigOwner ? application.applicant_id : appGig?.user_id
 
     // Insert review
     const { data: review, error: reviewError } = await supabase

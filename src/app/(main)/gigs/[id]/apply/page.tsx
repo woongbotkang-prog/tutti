@@ -22,13 +22,13 @@ export default function ApplyPage({ params }: { params: { id: string } }) {
       // 공고 작성자에게 알림 생성
       try {
         const supabase = createClient()
-        const { data: gig } = await supabase
+        const { data: gig, error: gigError } = await supabase
           .from('gigs')
           .select('user_id, title')
           .eq('id', params.id)
           .single()
 
-        if (gig) {
+        if (!gigError && gig) {
           await supabase.from('notifications').insert({
             user_id: gig.user_id,
             type: 'application_received',
@@ -75,9 +75,13 @@ export default function ApplyPage({ params }: { params: { id: string } }) {
             value={message}
             onChange={e => setMessage(e.target.value)}
             rows={6}
+            maxLength={1000}
             className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
           />
-          <p className="text-xs text-gray-400">※ 메시지는 선택사항입니다</p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-gray-400">※ 메시지는 선택사항입니다</p>
+            <p className="text-xs text-gray-400">{message.length}/1000</p>
+          </div>
         </div>
 
         <Button onClick={handleApply} size="full" isLoading={isLoading} className="bg-indigo-600 hover:bg-indigo-700">

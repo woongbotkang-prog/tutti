@@ -154,21 +154,21 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
 
       // 공고 제목 및 application 설정
       if (roomRes.data) {
-        const app = roomRes.data.application as { id?: string; status?: string; gig?: { id?: string; title?: string; status?: string } } | null
-        setGigTitle(app?.gig?.title || '')
+        const app = roomRes.data.application as { id?: string; status?: string; gig?: { id?: string; title?: string; status?: string } } | null | undefined
+        setGigTitle(app?.gig?.title ? String(app.gig.title) : '')
 
         // Check if should show review prompt
         if (app?.id && app?.status === 'accepted' && app?.gig?.status === 'closed') {
           setApplicationId(app.id)
-          // Check if already reviewed
-          const { data: existingReview } = await supabase
+          // Check if already reviewed (use maybeSingle since we're checking existence)
+          const { data: existingReview, error: reviewError } = await supabase
             .from('reviews')
             .select('id')
             .eq('application_id', app.id)
             .eq('reviewer_id', user.id)
-            .single()
+            .maybeSingle()
 
-          if (!existingReview) {
+          if (!reviewError && !existingReview) {
             setShouldShowReviewPrompt(true)
           }
         }

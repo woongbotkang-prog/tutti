@@ -132,14 +132,17 @@ export default function NotificationsPage() {
   useEffect(() => {
     if (realtimeSubscribed.current) return
 
+    let mounted = true
+    let channel: any = null
+
     const setupRealtime = async () => {
       try {
         const supabase = createClient()
         const { data: { user } } = await supabase.auth.getUser()
 
-        if (!user) return
+        if (!user || !mounted) return
 
-        const channel = supabase
+        channel = supabase
           .channel(`notifications:${user.id}`)
           .on(
             'postgres_changes',
@@ -150,6 +153,7 @@ export default function NotificationsPage() {
               filter: `user_id=eq.${user.id}`,
             },
             (payload) => {
+              if (!mounted) return
               const newNotification = payload.new as NotificationItem
               // Add animation by prepending
               setNotifications((prev) => [newNotification, ...prev])
@@ -162,16 +166,19 @@ export default function NotificationsPage() {
           .subscribe()
 
         realtimeSubscribed.current = true
-
-        return () => {
-          channel.unsubscribe()
-        }
       } catch (e) {
         console.error('Failed to setup realtime:', e)
       }
     }
 
     setupRealtime()
+
+    return () => {
+      mounted = false
+      if (channel) {
+        channel.unsubscribe()
+      }
+    }
   }, [soundEnabled])
 
   const handleClick = async (notification: NotificationItem) => {

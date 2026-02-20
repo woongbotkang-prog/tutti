@@ -11,6 +11,9 @@ export async function middleware(request: NextRequest) {
   const isProtectedRoute =
     pathname.startsWith('/profile') ||
     pathname.startsWith('/chat') ||
+    pathname.startsWith('/reviews/write') ||
+    pathname.startsWith('/repertoire') ||
+    pathname.startsWith('/applications') ||
     pathname === '/gigs/new' ||
     pathname.includes('/apply') ||
     pathname.match(/\/gigs\/.*\/edit/);

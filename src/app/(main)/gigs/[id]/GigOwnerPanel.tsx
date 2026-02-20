@@ -78,12 +78,13 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
         const { data: { user } } = await supabase.auth.getUser()
         if (user) {
           for (const app of missingApps) {
-            if (!app.applicant?.id) continue
+            const applicantId = app.applicant?.id
+            if (!applicantId) continue
             const { data: roomId } = await supabase
               .rpc('create_chat_room_for_application', {
                 p_application_id: app.id,
                 p_gig_owner_id: user.id,
-                p_applicant_id: app.applicant.id,
+                p_applicant_id: applicantId,
               })
             if (roomId) roomMap[app.id] = roomId
           }
@@ -114,36 +115,37 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
   const handleAccept = async (applicationId: string, applicantId: string) => {
     setRespondingId(applicationId)
     try {
+      // Validate applicant ID
+      if (!applicantId || applicantId.length === 0) {
+        throw new Error('지원자 정보를 찾을 수 없습니다.')
+      }
+
       const { error } = await supabase
         .from('applications')
         .update({ status: 'accepted', responded_at: new Date().toISOString() })
         .eq('id', applicationId)
       if (error) throw error
 
-      if (applicantId) {
-        await supabase.from('notifications').insert({
-          user_id: applicantId,
-          type: 'application_accepted',
-          title: '지원이 수락되었습니다',
-          body: `${gigTitle} 공고에 합격했습니다!`,
-          data: { gig_id: gigId },
-          is_read: false,
-        })
-      }
+      await supabase.from('notifications').insert({
+        user_id: applicantId,
+        type: 'application_accepted',
+        title: '지원이 수락되었습니다',
+        body: `${gigTitle} 공고에 합격했습니다!`,
+        data: { gig_id: gigId },
+        is_read: false,
+      })
 
       // 채팅방 자동 생성
-      if (applicantId) {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (user) {
-          const { data: roomId, error: rpcError } = await supabase
-            .rpc('create_chat_room_for_application', {
-              p_application_id: applicationId,
-              p_gig_owner_id: user.id,
-              p_applicant_id: applicantId,
-            })
-          if (!rpcError && roomId) {
-            setChatRoomIds(prev => ({ ...prev, [applicationId]: roomId }))
-          }
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: roomId, error: rpcError } = await supabase
+          .rpc('create_chat_room_for_application', {
+            p_application_id: applicationId,
+            p_gig_owner_id: user.id,
+            p_applicant_id: applicantId,
+          })
+        if (!rpcError && roomId) {
+          setChatRoomIds(prev => ({ ...prev, [applicationId]: roomId }))
         }
       }
 
@@ -167,6 +169,11 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
     if (!rejectionReason) return
     setRespondingId(applicationId)
     try {
+      // Validate applicant ID
+      if (!applicantId || applicantId.length === 0) {
+        throw new Error('지원자 정보를 찾을 수 없습니다.')
+      }
+
       const { error } = await supabase
         .from('applications')
         .update({
@@ -178,17 +185,15 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
         .eq('id', applicationId)
       if (error) throw error
 
-      if (applicantId) {
-        const reasonLabel = REJECTION_REASONS.find(r => r.value === rejectionReason)?.label || ''
-        await supabase.from('notifications').insert({
-          user_id: applicantId,
-          type: 'application_rejected',
-          title: '지원 결과 안내',
-          body: `${gigTitle} 공고: ${reasonLabel}`,
-          data: { gig_id: gigId },
-          is_read: false,
-        })
-      }
+      const reasonLabel = REJECTION_REASONS.find(r => r.value === rejectionReason)?.label || ''
+      await supabase.from('notifications').insert({
+        user_id: applicantId,
+        type: 'application_rejected',
+        title: '지원 결과 안내',
+        body: `${gigTitle} 공고: ${reasonLabel}`,
+        data: { gig_id: gigId },
+        is_read: false,
+      })
 
       setApplications(prev =>
         prev.map(app => app.id === applicationId ? { ...app, status: 'rejected' } : app)
@@ -300,10 +305,12 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
                       )}
                       <div>
                         <p className="font-bold text-sm text-gray-900">
-                          {app.applicant?.display_name ?? '알 수 없음'}
+                          {app.applicant?.display_name && app.applicant.display_name.length > 0
+                            ? app.applicant.display_name
+                            : '알 수 없음'}
                         </p>
                         <p className="text-xs text-gray-400">
-                          {app.applicant?.manner_temperature?.toFixed(1)}°
+                          {app.applicant?.manner_temperature ? `${app.applicant.manner_temperature.toFixed(1)}°` : '정보 없음'}
                           {app.applicant?.region?.name && ` · ${app.applicant.region.name}`}
                           {' · '}{timeAgo(app.applied_at)}
                         </p>

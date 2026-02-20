@@ -133,13 +133,19 @@ export default function ReviewWritePage() {
           instrument,
         })
 
-        // Check if user already reviewed
-        const { data: existingReview } = await supabase
+        // Check if user already reviewed (use maybeSingle since we're checking existence)
+        const { data: existingReview, error: reviewCheckError } = await supabase
           .from('reviews')
           .select('id')
           .eq('application_id', applicationId)
           .eq('reviewer_id', user.id)
-          .single()
+          .maybeSingle()
+
+        if (reviewCheckError) {
+          setError('리뷰 확인 중 오류가 발생했어요.')
+          setLoading(false)
+          return
+        }
 
         if (existingReview) {
           setError('이미 이 지원에 대한 리뷰를 작성했어요.')
@@ -183,16 +189,28 @@ export default function ReviewWritePage() {
       }
 
       // Get the other party's ID
-      const { data: application } = await supabase
+      const { data: application, error: appError } = await supabase
         .from('applications')
         .select('gig:gigs(user_id), applicant_id')
         .eq('id', applicationId)
         .single()
 
-      const appGig = Array.isArray(application?.gig) ? application?.gig[0] : application?.gig
-      const revieweeId = appGig?.user_id === user.id
-        ? application?.applicant_id
-        : appGig?.user_id
+      if (appError || !application) {
+        setError('지원 정보를 찾을 수 없어요.')
+        setSubmitting(false)
+        return
+      }
+
+      const appGig = Array.isArray(application.gig) ? application.gig[0] : (application.gig as any)
+      const revieweeId = (appGig as any)?.user_id === user.id
+        ? application.applicant_id
+        : (appGig as any)?.user_id
+
+      if (!revieweeId) {
+        setError('리뷰 대상을 찾을 수 없어요.')
+        setSubmitting(false)
+        return
+      }
 
       // Insert review
       const { data: review, error: reviewError } = await supabase
@@ -222,13 +240,18 @@ export default function ReviewWritePage() {
       }
 
       // Update user's manner temperature
-      const { data: currentProfile } = await supabase
+      const { data: currentProfile, error: profileError } = await supabase
         .from('user_profiles')
         .select('manner_temperature')
         .eq('id', user.id)
         .single()
 
-      const newTemperature = Math.max(30, (currentProfile?.manner_temperature || 36.5) + temperatureChange)
+      if (profileError || !currentProfile) {
+        console.error('Failed to fetch current profile:', profileError)
+        // Use default temperature if fetch fails
+      }
+
+      const newTemperature = Math.max(30, (currentProfile?.manner_temperature ?? 36.5) + temperatureChange)
 
       await supabase
         .from('user_profiles')

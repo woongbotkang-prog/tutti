@@ -47,7 +47,10 @@ export default function RepertoirePage() {
     const loadRepertoire = async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
-        if (!user) return
+        if (!user) {
+          setLoading(false)
+          return
+        }
 
         const { data, error } = await supabase
           .from('user_repertoire')
@@ -55,17 +58,22 @@ export default function RepertoirePage() {
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
 
-        if (error) throw error
-        setRepertoire(data || [])
+        if (error) {
+          console.error('Failed to load repertoire:', error)
+          setRepertoire([])
+        } else {
+          setRepertoire(data || [])
+        }
       } catch (e) {
         console.error('Failed to load repertoire:', e)
+        setRepertoire([])
       } finally {
         setLoading(false)
       }
     }
 
     loadRepertoire()
-  }, [supabase])
+  }, [])
 
   // Debounced search
   const searchPieces = useCallback(async (q: string) => {

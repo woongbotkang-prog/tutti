@@ -255,8 +255,10 @@ export default function NewGigPage() {
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={5}
+              maxLength={2000}
               className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
             />
+            <p className="text-xs text-gray-400 text-right mt-1">{description.length}/2000</p>
           </div>
         </div>
 
