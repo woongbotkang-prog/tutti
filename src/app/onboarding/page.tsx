@@ -191,11 +191,11 @@ export default function OnboardingPage() {
         const { error: musicPrefError } = await supabase
           .from('organization_music_preferences')
           .upsert({
-            organization_id: user.id,
+            org_user_id: user.id,
             preferred_periods: selectedPeriods.length > 0 ? selectedPeriods : null,
             preferred_genres: selectedGenres.length > 0 ? selectedGenres : null,
             updated_at: new Date().toISOString(),
-          })
+          }, { onConflict: 'org_user_id' })
 
         if (musicPrefError) throw musicPrefError
       }

@@ -30,11 +30,11 @@ const LEVEL_LABELS: Record<string, string> = {
 export default async function GigDetailPage({ params, searchParams }: { params: { id: string }; searchParams: { applied?: string } }) {
   const supabase = await createClient()
 
-  const { data: gig, error } = await supabase
+  let { data: gig, error } = await supabase
     .from('gigs')
     .select(`
       *,
-      author:user_profiles(id, display_name, avatar_url, manner_temperature),
+      author:user_profiles!gigs_user_id_fkey(id, display_name, avatar_url, manner_temperature),
       region:regions(id, name),
       instruments:gig_instruments(
         id, count_needed, notes,
@@ -49,6 +49,29 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
     `)
     .eq('id', params.id)
     .single()
+
+  // gig_pieces 스키마/관계가 아직 반영되지 않은 환경 폴백
+  if (error) {
+    const fallback = await supabase
+      .from('gigs')
+      .select(`
+        *,
+        author:user_profiles!gigs_user_id_fkey(id, display_name, avatar_url, manner_temperature),
+        region:regions(id, name),
+        instruments:gig_instruments(
+          id, count_needed, notes,
+          instrument:instruments(id, name)
+        )
+      `)
+      .eq('id', params.id)
+      .single()
+
+    gig = fallback.data as any
+    error = fallback.error
+    if (gig && !('gig_pieces' in gig)) {
+      ;(gig as any).gig_pieces = []
+    }
+  }
 
   if (error || !gig) {
     console.error('Gig detail error:', error?.message, error?.details, error?.hint)
