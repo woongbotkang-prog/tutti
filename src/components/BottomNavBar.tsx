@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Search, FileText, MessageCircle, Bell, User } from 'lucide-react'
+import { Home, Search, MessageCircle, Bell, User, Users } from 'lucide-react'
 import { fetchUnreadNotificationCount, fetchUnreadChatCount } from '@/lib/supabase/queries'
 
 interface NavItem {
@@ -16,6 +16,7 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { icon: Home,          label: '홈',       href: '/',              matchPrefix: '/' },
   { icon: Search,        label: '공고',     href: '/gigs',          matchPrefix: '/gigs' },
+  { icon: Users,         label: '연주자',   href: '/musicians',     matchPrefix: '/musicians' },
   { icon: MessageCircle, label: '채팅',     href: '/chat',          matchPrefix: '/chat' },
   { icon: Bell,          label: '알림',     href: '/notifications', matchPrefix: '/notifications' },
   { icon: User,          label: '프로필',   href: '/profile',       matchPrefix: '/profile' },
@@ -42,6 +43,9 @@ function isActive(pathname: string, matchPrefix: string): boolean {
   }
   if (matchPrefix === '/chat') {
     return pathname === '/chat' || pathname.startsWith('/chat/')
+  }
+  if (matchPrefix === '/musicians') {
+    return pathname === '/musicians' || pathname.startsWith('/musicians/')
   }
   return pathname.startsWith(matchPrefix)
 }

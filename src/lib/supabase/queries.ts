@@ -553,3 +553,198 @@ export async function upsertUserInstruments(
   if (error) throw error
   return data
 }
+
+// ============================================================
+// MUSICIANS / PROFILES (공개 뮤지션 프로필)
+// ============================================================
+
+export interface MusicianListItem {
+  id: string
+  display_name: string
+  avatar_url: string | null
+  manner_temperature: number
+  region: { name: string } | null
+  instruments: Array<{
+    skill_level: SkillLevel
+    instrument: { name: string } | null
+  }>
+}
+
+export interface FetchMusiciansParams {
+  search?: string
+  instrumentId?: string
+  regionId?: string
+  skillLevel?: SkillLevel
+  page?: number
+  limit?: number
+}
+
+export async function fetchMusicians({
+  search,
+  instrumentId,
+  regionId,
+  skillLevel,
+  page = 0,
+  limit = 20,
+}: FetchMusiciansParams = {}): Promise<{
+  data: MusicianListItem[]
+  total: number
+  hasMore: boolean
+}> {
+  const supabase = createClient()
+
+  let query = supabase
+    .from('user_profiles')
+    .select(
+      `
+      id, display_name, avatar_url, manner_temperature,
+      region:regions(name),
+      instruments:user_instruments(
+        skill_level,
+        instrument:instruments(name)
+      )
+      `,
+      { count: 'exact' }
+    )
+    .eq('is_active', true)
+
+  // Search by name
+  if (search && search.trim()) {
+    query = query.ilike('display_name', `%${search}%`)
+  }
+
+  // Filter by region
+  if (regionId) {
+    query = query.eq('region_id', regionId)
+  }
+
+  // Filter by instrument and skill level
+  if (instrumentId) {
+    const { data: userIds } = await supabase
+      .from('user_instruments')
+      .select('user_id')
+      .eq('instrument_id', instrumentId)
+
+    const ids = userIds?.map(u => u.user_id) || []
+    if (ids.length === 0) {
+      return { data: [], total: 0, hasMore: false }
+    }
+
+    // Additional skill level filter
+    if (skillLevel) {
+      const { data: filteredUserIds } = await supabase
+        .from('user_instruments')
+        .select('user_id')
+        .eq('instrument_id', instrumentId)
+        .in('skill_level', [skillLevel, 'professional', 'advanced'])
+
+      const filteredIds = filteredUserIds?.map(u => u.user_id) || []
+      query = query.in('id', filteredIds.length > 0 ? filteredIds : ids)
+    } else {
+      query = query.in('id', ids)
+    }
+  }
+
+  query = query.order('manner_temperature', { ascending: false })
+    .range(page * limit, (page + 1) * limit - 1)
+
+  const { data, error, count } = await query
+
+  if (error) throw error
+
+  const total = count || 0
+  const hasMore = (page + 1) * limit < total
+
+  // Type cast the data to handle array responses
+  const typedData = (data || []) as any
+
+  return {
+    data: typedData,
+    total,
+    hasMore,
+  }
+}
+
+export interface PublicMusicianProfile {
+  id: string
+  display_name: string
+  avatar_url: string | null
+  bio: string | null
+  manner_temperature: number
+  is_verified: boolean
+  region: { name: string } | null
+  instruments: Array<{
+    id: string
+    skill_level: SkillLevel
+    years_of_experience: number | null
+    instrument: { id: string; name: string } | null
+  }>
+  repertoire: Array<{
+    id: string
+    composer_name: string
+    piece_name: string
+    performance_ready: boolean
+    composer: { name_ko: string | null; name_en: string } | null
+  }>
+  reviews: Array<{
+    id: string
+    score: number
+    comment: string | null
+    created_at: string
+    reviewer: { display_name: string; avatar_url: string | null } | null
+  }>
+}
+
+export async function fetchPublicMusicianProfile(userId: string): Promise<PublicMusicianProfile | null> {
+  const supabase = createClient()
+
+  const { data: profile, error: profileError } = await supabase
+    .from('user_profiles')
+    .select(
+      `
+      id, display_name, avatar_url, bio, manner_temperature, is_verified,
+      region:regions(name),
+      instruments:user_instruments(
+        id, skill_level, years_of_experience,
+        instrument:instruments(id, name)
+      ),
+      repertoire:user_repertoires(
+        id, composer_name, piece_name, performance_ready,
+        composer:composers(name_ko, name_en)
+      )
+      `
+    )
+    .eq('id', userId)
+    .eq('is_active', true)
+    .single()
+
+  if (profileError) return null
+
+  // Fetch revealed reviews for this musician
+  const { data: reviews } = await supabase
+    .from('reviews')
+    .select(
+      `
+      id, score, comment, created_at,
+      reviewer:reviewer_id(display_name, avatar_url)
+      `
+    )
+    .eq('reviewee_id', userId)
+    .not('revealed_at', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  // Process reviews to handle array responses and convert to proper types
+  const processedReviews = (reviews || []).map((review: any) => ({
+    id: review.id,
+    score: review.score,
+    comment: review.comment,
+    created_at: review.created_at,
+    reviewer: Array.isArray(review.reviewer) ? review.reviewer[0] : review.reviewer,
+  }))
+
+  return {
+    ...profile,
+    reviews: processedReviews,
+  } as unknown as PublicMusicianProfile
+}

@@ -27,6 +27,12 @@ export default async function ApplicationsPage() {
     .eq('applicant_id', user.id)
     .order('applied_at', { ascending: false })
 
+  // Fetch reviews to check if user has already reviewed
+  const { data: allReviews } = await supabase
+    .from('reviews')
+    .select('id, application_id, reviewer_id')
+    .eq('reviewer_id', user.id)
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <header className="bg-white px-4 py-4 border-b border-gray-100 sticky top-0 z-20">
@@ -42,10 +48,13 @@ export default async function ApplicationsPage() {
           </div>
         ) : (
           applications.map(app => {
-            const gig = app.gig as unknown as { id: string; title: string; gig_type: string; author: { display_name: string } | null; region: { name: string } | null } | null
+            const gig = app.gig as unknown as { id: string; title: string; gig_type: string; status: string; author: { display_name: string } | null; region: { name: string } | null } | null
             const chatRoom = app.chat_room as unknown as { id: string }[] | null
             const chatRoomId = chatRoom?.[0]?.id
             const status = STATUS_LABELS[app.status] ?? STATUS_LABELS.pending
+            const hasReviewed = allReviews?.some(r => r.application_id === app.id)
+            const canReview = app.status === 'accepted' && gig?.status === 'closed' && !hasReviewed
+
             return (
               <div key={app.id}>
                 <Link href={`/gigs/${gig?.id}`}>
@@ -66,11 +75,25 @@ export default async function ApplicationsPage() {
                   </div>
                 </Link>
                 {app.status === 'accepted' && (
-                  <Link href={chatRoomId ? `/chat/${chatRoomId}` : '/chat'}>
-                    <div className="mt-1 bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5 text-sm font-medium text-indigo-600 hover:bg-indigo-100 transition-colors text-center">
-                      💬 채팅 바로가기
-                    </div>
-                  </Link>
+                  <div className="mt-1 flex gap-1.5">
+                    <Link href={chatRoomId ? `/chat/${chatRoomId}` : '/chat'} className="flex-1">
+                      <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5 text-sm font-medium text-indigo-600 hover:bg-indigo-100 transition-colors text-center">
+                        💬 채팅
+                      </div>
+                    </Link>
+                    {canReview && (
+                      <Link href={`/reviews/write?application_id=${app.id}`} className="flex-1">
+                        <div className="bg-amber-50 border border-amber-100 rounded-xl px-4 py-2.5 text-sm font-medium text-amber-600 hover:bg-amber-100 transition-colors text-center">
+                          📝 리뷰
+                        </div>
+                      </Link>
+                    )}
+                    {hasReviewed && (
+                      <div className="flex-1 bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-400 text-center">
+                        ✓ 리뷰 완료
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )

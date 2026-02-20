@@ -29,6 +29,8 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
   const [otherUserName, setOtherUserName] = useState('')
   const [gigTitle, setGigTitle] = useState('')
   const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected'>('connecting')
+  const [applicationId, setApplicationId] = useState<string | null>(null)
+  const [shouldShowReviewPrompt, setShouldShowReviewPrompt] = useState(false)
 
   const bottomRef = useRef<HTMLDivElement>(null)
   const channelRef = useRef<RealtimeChannel | null>(null)
@@ -126,10 +128,10 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
           .eq('room_id', roomId)
           .neq('user_id', user.id)
           .limit(1),
-        // 공고 제목
+        // 공고 제목 및 application 정보
         supabase
           .from('chat_rooms')
-          .select('application:applications(gig:gigs(title))')
+          .select('application:applications(id, status, gig:gigs(id, title, status))')
           .eq('id', roomId)
           .single(),
         // 메시지 로드
@@ -150,10 +152,26 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
         setOtherUserName(u?.display_name || '상대방')
       }
 
-      // 공고 제목 설정
+      // 공고 제목 및 application 설정
       if (roomRes.data) {
-        const app = roomRes.data.application as { gig?: { title?: string } } | null
+        const app = roomRes.data.application as { id?: string; status?: string; gig?: { id?: string; title?: string; status?: string } } | null
         setGigTitle(app?.gig?.title || '')
+
+        // Check if should show review prompt
+        if (app?.id && app?.status === 'accepted' && app?.gig?.status === 'closed') {
+          setApplicationId(app.id)
+          // Check if already reviewed
+          const { data: existingReview } = await supabase
+            .from('reviews')
+            .select('id')
+            .eq('application_id', app.id)
+            .eq('reviewer_id', user.id)
+            .single()
+
+          if (!existingReview) {
+            setShouldShowReviewPrompt(true)
+          }
+        }
       }
 
       // 메시지 설정
@@ -274,6 +292,23 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
           </span>
         )}
       </header>
+
+      {/* 리뷰 작성 배너 */}
+      {shouldShowReviewPrompt && applicationId && (
+        <div className="bg-amber-50 border-b border-amber-200 px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-amber-900">이 매칭에 대한 리뷰를 작성해주세요</p>
+              <p className="text-xs text-amber-700 mt-0.5">양쪽이 모두 리뷰를 작성하면 서로의 평가가 공개돼요</p>
+            </div>
+            <Link href={`/reviews/write?application_id=${applicationId}`}>
+              <button className="shrink-0 px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold rounded-lg transition-colors">
+                리뷰 작성
+              </button>
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* 연결 끊김 배너 */}
       {connectionStatus === 'disconnected' && (

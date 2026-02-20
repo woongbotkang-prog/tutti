@@ -266,6 +266,7 @@ export interface Review {
   is_blind: boolean
   revealed_at: string | null
   created_at: string
+  category_scores?: Record<string, number> | null
 }
 
 export interface MannerTemperatureLog {
