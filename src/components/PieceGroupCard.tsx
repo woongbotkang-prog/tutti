@@ -1,9 +1,5 @@
 import Link from 'next/link'
 
-const INK = '#1a1a1a'
-const ACCENT = '#b8860b'
-const WARM_WHITE = '#fffef9'
-
 interface Team {
   gig_id: string
   gig_title: string
@@ -21,50 +17,59 @@ interface PieceGroup {
   teams: Team[]
 }
 
+const periodKo: Record<string, string> = {
+  baroque: '바로크',
+  classical: '고전',
+  romantic: '낭만',
+  modern: '근현대',
+  contemporary: '현대',
+}
+
 export default function PieceGroupCard({ piece }: { piece: PieceGroup }) {
   const firstGigHref = piece.teams.length > 0 ? `/gigs/${piece.teams[0].gig_id}` : '/gigs'
 
   return (
-    <div style={{
-      backgroundColor: WARM_WHITE,
-      borderRadius: '16px',
-      border: '1px solid #f0ebe3',
-      padding: '16px',
-      position: 'relative',
-    }}>
-      {/* Composer */}
-      {(piece.composer_name_ko || piece.composer_name_en) && (
-        <p style={{ fontSize: '12px', color: ACCENT, fontWeight: 600, marginBottom: '2px' }}>
-          {piece.composer_name_ko || ''}
-          {piece.composer_name_en ? ` (${piece.composer_name_en})` : ''}
-        </p>
-      )}
+    <div className="bg-warm-white rounded-2xl border border-[#f0ebe3] p-4 relative">
+      {/* 작곡가 + 시대 태그 */}
+      <div className="flex items-center gap-2 mb-1 flex-wrap">
+        {(piece.composer_name_ko || piece.composer_name_en) && (
+          <p className="text-xs text-accent font-semibold">
+            {piece.composer_name_ko || ''}
+            {piece.composer_name_en ? ` (${piece.composer_name_en})` : ''}
+          </p>
+        )}
+        {piece.period && (
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#f5eedf] text-[#8a7650] font-medium">
+            #{periodKo[piece.period] || piece.period}
+          </span>
+        )}
+      </div>
 
-      {/* Piece title — links to first gig */}
-      <Link href={firstGigHref} style={{ textDecoration: 'none' }}>
-        <h3 style={{ fontSize: '16px', fontWeight: 700, color: INK, lineHeight: 1.4, marginBottom: '8px' }}>
+      {/* 곡 제목 — 첫 번째 공고로 링크 */}
+      <Link href={firstGigHref}>
+        <h3 className="text-base font-bold text-ink leading-snug mb-2">
           {piece.piece_title}
         </h3>
       </Link>
 
-      {/* Team count */}
-      <p style={{ fontSize: '12px', color: '#888', marginBottom: '6px' }}>
+      {/* 모집 팀 수 */}
+      <p className="text-xs text-gray-400 mb-2">
         {piece.team_count}개 팀 모집 중
       </p>
 
-      {/* Team list */}
+      {/* 팀 목록 */}
       {piece.teams.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+        <div className="flex flex-col gap-0.5">
           {piece.teams.map((team, i) => {
             const isLast = i === piece.teams.length - 1
             const prefix = isLast ? '└─' : '├─'
             return (
-              <Link key={team.gig_id} href={`/gigs/${team.gig_id}`} style={{ textDecoration: 'none' }}>
-                <p style={{ fontSize: '12px', color: '#666', lineHeight: 1.6 }}>
-                  <span style={{ color: '#ccc', marginRight: '4px' }}>{prefix}</span>
+              <Link key={team.gig_id} href={`/gigs/${team.gig_id}`}>
+                <p className="text-xs text-[#666] leading-relaxed">
+                  <span className="text-[#ccc] mr-1">{prefix}</span>
                   {team.author_name || '익명'}
                   {team.region_name && (
-                    <span style={{ color: '#bbb' }}> · {team.region_name}</span>
+                    <span className="text-[#bbb]"> · {team.region_name}</span>
                   )}
                 </p>
               </Link>
