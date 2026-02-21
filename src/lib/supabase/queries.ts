@@ -43,7 +43,7 @@ export interface GigListItem {
     piece: {
       title: string
       alternative_titles: string[] | null
-      composer: { name: string; name_ko: string | null } | null
+      composer: { name: string; name_ko: string | null; name_en: string | null } | null
     } | null
   }>
 }
@@ -128,7 +128,7 @@ export async function fetchGigs({
         piece:pieces(
           title,
           alternative_titles,
-          composer:composers(name, name_ko)
+          composer:composers(name, name_ko, name_en)
         )
       )
     `)
@@ -140,26 +140,54 @@ export async function fetchGigs({
   if (allowedGigIds) query = query.in('id', allowedGigIds)
   if (periodFilteredGigIds) query = query.in('id', periodFilteredGigIds)
 
-  // 검색: 제목 또는 곡 이름에서 검색
-  // Supabase에서 OR 조건을 처리하기 위해 별도로 조회
+  // 검색: 제목, 곡 이름, 작곡가명, 곡 DB 제목 기반 검색
   if (searchQuery?.trim()) {
-    const searchTerm = `%${searchQuery.trim()}%`
+    const searchMatchIds = new Set<string>()
 
-    // 제목 또는 곡명 필터 - 두 개의 쿼리로 분리
+    // 1. gigs.title + gigs.piece_name ILIKE
     const { data: titleMatches } = await supabase
       .from('gigs')
       .select('id')
-      .ilike('title', searchTerm)
+      .or(`title.ilike.%${searchQuery.trim()}%,piece_name.ilike.%${searchQuery.trim()}%`)
+    titleMatches?.forEach(r => searchMatchIds.add(r.id))
 
-    const { data: pieceMatches } = await supabase
-      .from('gigs')
+    // 2. 작곡가 이름으로 검색 → pieces → gig_pieces → gig_id
+    const { data: composerMatches } = await supabase
+      .from('composers')
       .select('id')
-      .ilike('piece_name', searchTerm)
+      .or(`name_ko.ilike.%${searchQuery.trim()}%,name.ilike.%${searchQuery.trim()}%`)
 
-    const searchMatchIds = new Set([
-      ...(titleMatches ?? []).map(r => r.id),
-      ...(pieceMatches ?? []).map(r => r.id),
-    ])
+    if (composerMatches && composerMatches.length > 0) {
+      const composerIds = composerMatches.map(c => c.id)
+      const { data: piecesFromComposer } = await supabase
+        .from('pieces')
+        .select('id')
+        .in('composer_id', composerIds)
+
+      if (piecesFromComposer && piecesFromComposer.length > 0) {
+        const pieceIds = piecesFromComposer.map(p => p.id)
+        const { data: gigPiecesFromComposer } = await supabase
+          .from('gig_pieces')
+          .select('gig_id')
+          .in('piece_id', pieceIds)
+        gigPiecesFromComposer?.forEach(gp => searchMatchIds.add(gp.gig_id))
+      }
+    }
+
+    // 3. pieces.title 기반 검색 → gig_pieces → gig_id
+    const { data: pieceTitleMatches } = await supabase
+      .from('pieces')
+      .select('id')
+      .ilike('title', `%${searchQuery.trim()}%`)
+
+    if (pieceTitleMatches && pieceTitleMatches.length > 0) {
+      const pieceIds = pieceTitleMatches.map(p => p.id)
+      const { data: gigPiecesFromTitle } = await supabase
+        .from('gig_pieces')
+        .select('gig_id')
+        .in('piece_id', pieceIds)
+      gigPiecesFromTitle?.forEach(gp => searchMatchIds.add(gp.gig_id))
+    }
 
     if (searchMatchIds.size === 0) return { data: [], hasMore: false }
     query = query.in('id', Array.from(searchMatchIds))
@@ -713,7 +741,7 @@ export interface PublicMusicianProfile {
     composer_name: string
     piece_name: string
     performance_ready: boolean
-    composer: { name_ko: string | null; name: string } | null
+    composer: { name_ko: string | null; name: string; name_en: string | null } | null
   }>
   reviews: Array<{
     id: string
@@ -739,7 +767,7 @@ export async function fetchPublicMusicianProfile(userId: string): Promise<Public
       ),
       repertoire:user_repertoire(
         id, composer_name, piece_name, performance_ready,
-        composer:composers(name_ko, name)
+        composer:composers(name_ko, name, name_en)
       )
       `
     )
