@@ -6,6 +6,7 @@ import BottomNavBar from '@/components/BottomNavBar'
 import PieceGroupCard from '@/components/PieceGroupCard'
 import WelcomeToast from '@/components/WelcomeToast'
 import HomeSearchBar from '@/components/HomeSearchBar'
+import ScrollingGigCards from '@/components/ScrollingGigCards'
 
 export const revalidate = 3600 // ISR: 1시간
 
@@ -92,7 +93,7 @@ export default async function HomePage() {
   }
   const groupedPieces = Object.values(pieceGroupMap)
     .sort((a: any, b: any) => b.team_count - a.team_count)
-    .slice(0, 5)
+    .slice(0, 7)
 
   // 작곡가 빈도 집계
   const composerCounts: Record<string, { name_ko: string; name_en: string; count: number }> = {}
@@ -144,6 +145,126 @@ export default async function HomePage() {
     return gig.piece_name || gig.title
   }
 
+  // ── 비로그인 랜딩 페이지 ──────────────────────────────────────────────────
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-cream">
+        {/* 헤더 */}
+        <header className="px-6 py-4 max-w-lg mx-auto flex items-center justify-between">
+          <Link href="/">
+            <span className="text-2xl font-black text-accent tracking-tight">TUTTI</span>
+          </Link>
+          <Link href="/login">
+            <Button variant="outline" size="sm">로그인</Button>
+          </Link>
+        </header>
+
+        {/* ① 히어로 섹션 */}
+        <section className="px-6 pt-10 pb-10 max-w-lg mx-auto text-center">
+          <h1 className="text-[32px] font-black text-ink leading-tight mb-4 whitespace-pre-line">
+            {"함께 연주할 사람,\n여기서 만나세요."}
+          </h1>
+          <p className="text-sm text-gray-500 mb-8 whitespace-pre-line">
+            {"클래식 연주자를 위한 매칭 플랫폼.\n곡을 중심으로 팀을 찾고, 바로 연결됩니다."}
+          </p>
+          <Link href="/login" className="block mx-auto max-w-xs">
+            <button className="w-full h-12 bg-accent text-white rounded-xl font-bold text-base hover:bg-accent/90 transition-colors">
+              시작하기 →
+            </button>
+          </Link>
+          <p className="text-xs text-gray-400 mt-3">
+            이미 계정이 있나요?{' '}
+            <Link href="/login" className="text-accent font-medium">
+              로그인
+            </Link>
+          </p>
+        </section>
+
+        {/* ② 이렇게 사용해요 섹션 */}
+        <section className="px-6 pb-10 max-w-lg mx-auto">
+          <h2 className="text-lg font-bold text-ink mb-4">이렇게 사용해요</h2>
+          <div className="flex flex-col gap-3">
+            <div className="bg-[#fffef9] rounded-2xl border border-[#f0ebe3] p-4">
+              <span className="text-2xl">🎵</span>
+              <p className="font-bold text-sm mt-2 text-ink">곡을 검색하세요</p>
+              <p className="text-xs text-gray-500 mt-1">연주하고 싶은 곡이나 작곡가로 검색</p>
+            </div>
+            <div className="bg-[#fffef9] rounded-2xl border border-[#f0ebe3] p-4">
+              <span className="text-2xl">🎯</span>
+              <p className="font-bold text-sm mt-2 text-ink">팀에 지원하세요</p>
+              <p className="text-xs text-gray-500 mt-1">맞는 공고를 찾으면 클릭 한 번으로 지원</p>
+            </div>
+            <div className="bg-[#fffef9] rounded-2xl border border-[#f0ebe3] p-4">
+              <span className="text-2xl">💬</span>
+              <p className="font-bold text-sm mt-2 text-ink">함께 연주하세요</p>
+              <p className="text-xs text-gray-500 mt-1">수락되면 채팅방이 자동으로 열립니다</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ③ 지금 모집 중 섹션 (자동 스크롤 마키) */}
+        {groupedPieces.length > 0 && (
+          <section className="pb-10">
+            <div className="px-6 max-w-lg mx-auto mb-4">
+              <h2 className="text-lg font-bold text-ink">지금 모집 중인 공고</h2>
+            </div>
+            <ScrollingGigCards cards={groupedPieces as any} />
+          </section>
+        )}
+
+        {/* ④ 숫자로 보는 TUTTI */}
+        <section className="max-w-lg mx-auto px-6 pb-10">
+          <h2 className="text-lg font-bold text-ink mb-3">숫자로 보는 TUTTI</h2>
+          <div className="grid grid-cols-3 gap-3">
+            <div className="bg-white rounded-xl p-3 text-center border border-gray-100">
+              <p className="text-xl font-black text-accent">{piecesCount || 0}</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">등록된 곡</p>
+            </div>
+            <div className="bg-white rounded-xl p-3 text-center border border-gray-100">
+              <p className="text-xl font-black text-accent">{activeGigsCount || 0}</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">모집 중인 팀</p>
+            </div>
+            <div className="bg-white rounded-xl p-3 text-center border border-gray-100">
+              <p className="text-xl font-black text-accent">{usersCount || 0}</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">연주자</p>
+            </div>
+          </div>
+        </section>
+
+        {/* ⑤ 마지막 CTA 섹션 */}
+        <section className="px-6 pb-12 max-w-lg mx-auto">
+          <div className="bg-[#1a1a1a] rounded-2xl px-6 py-8 text-center">
+            <p className="text-sm text-[#faf8f5] mb-4">연주자 동료를 찾고 있다면</p>
+            <Link href="/login">
+              <button className="bg-accent text-white rounded-xl px-8 py-3 font-bold text-sm hover:bg-accent/90 transition-colors">
+                무료로 시작하기
+              </button>
+            </Link>
+            <p className="text-xs text-gray-400 mt-4">가입은 30초면 됩니다 ✨</p>
+          </div>
+        </section>
+
+        {/* 푸터 */}
+        <footer className="bg-[#fffef9] border-t border-[#f0ebe3]">
+          <div className="max-w-lg mx-auto px-6 py-6 text-center">
+            <span className="text-xl font-black text-accent tracking-tight">TUTTI</span>
+            <p className="text-[11px] text-gray-400 mt-3">© 2026 TUTTI. 클래식 연주자 매칭</p>
+            <div className="flex items-center justify-center gap-4 mt-3">
+              <Link href="/terms" className="text-[11px] text-gray-400">이용약관</Link>
+              <span className="text-gray-200">·</span>
+              <Link href="/privacy" className="text-[11px] text-gray-400">개인정보처리방침</Link>
+              <span className="text-gray-200">·</span>
+              <a href="mailto:support@tutti.music" className="text-[11px] text-gray-400">
+                문의: support@tutti.music
+              </a>
+            </div>
+          </div>
+        </footer>
+      </div>
+    )
+  }
+
+  // ── 로그인 대시보드 ──────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-cream pb-24">
       <Suspense fallback={null}><WelcomeToast /></Suspense>
@@ -153,17 +274,11 @@ export default async function HomePage() {
         <Link href="/">
           <span className="text-2xl font-black text-accent tracking-tight">TUTTI</span>
         </Link>
-        {user ? (
-          <Link href="/profile">
-            <div className="w-9 h-9 rounded-full bg-cream flex items-center justify-center text-accent font-bold text-sm">
-              나
-            </div>
-          </Link>
-        ) : (
-          <Link href="/login">
-            <Button variant="outline" size="sm">로그인</Button>
-          </Link>
-        )}
+        <Link href="/profile">
+          <div className="w-9 h-9 rounded-full bg-cream flex items-center justify-center text-accent font-bold text-sm">
+            나
+          </div>
+        </Link>
       </header>
 
       {/* 히어로 — 검색 바 */}
@@ -175,7 +290,7 @@ export default async function HomePage() {
       </section>
 
       {/* 프로필 미완성 배너 */}
-      {user && isProfileIncomplete && (
+      {isProfileIncomplete && (
         <section className="max-w-lg mx-auto px-6 pb-4">
           <Link href="/profile/edit">
             <div className="bg-[#fdf8ee] border border-[#f0e6d3] rounded-xl px-4 py-3 flex items-center justify-between">
