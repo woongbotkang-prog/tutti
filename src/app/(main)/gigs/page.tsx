@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { Search, SlidersHorizontal, X } from 'lucide-react'
 import { fetchGigs, type GigListItem, type SortOption } from '@/lib/supabase/queries'
@@ -61,13 +62,18 @@ function GigCardSkeleton() {
   )
 }
 
+// ── 앙상블 유형 추정 ──────────────────────────────────────────
+function getEnsembleType(instrumentCount: number): string {
+  if (instrumentCount <= 1) return '독주'
+  if (instrumentCount === 2) return '듀오'
+  if (instrumentCount === 3) return '삼중주'
+  if (instrumentCount <= 6) return '실내악'
+  return '오케스트라'
+}
+
 // ── 공고 카드 ──────────────────────────────────────────────────
 function GigCard({ gig }: { gig: GigListItem }) {
-  const instrumentNames =
-    gig.instruments
-      ?.map(i => i.instrument?.name)
-      .filter(Boolean)
-      .join(', ') || '미지정'
+  const instruments = gig.instruments?.map(i => i.instrument?.name).filter(Boolean) as string[] || []
 
   const daysLeft = gig.expires_at
     ? Math.ceil((new Date(gig.expires_at).getTime() - Date.now()) / 86_400_000)
@@ -76,75 +82,98 @@ function GigCard({ gig }: { gig: GigListItem }) {
   const isClosed = gig.status === 'closed' || gig.status === 'expired'
   const isExpired = isClosed || (daysLeft !== null && daysLeft < 0)
 
+  // gig_pieces에서 곡/작곡가 정보 추출
+  const firstPiece = gig.gig_pieces?.[0]?.piece
+  const pieceTitle = firstPiece?.title || gig.piece_name || gig.title
+  const pieceAltTitle = firstPiece?.alternative_titles?.[0] || null
+  const composerName = firstPiece?.composer?.name_en || firstPiece?.composer?.name || null
+  const ensembleType = getEnsembleType(instruments.length)
+
   return (
     <Link href={`/gigs/${gig.id}`}>
       <div className={`bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md hover:border-cream-dark transition-all active:scale-[0.99] ${isExpired ? 'opacity-50' : ''}`}>
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {gig.is_project ? (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-cream text-accent">
-                프로젝트
-              </span>
-            ) : (
-              <span
-                className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                  gig.gig_type === 'hiring'
-                    ? 'bg-cream text-accent'
-                    : 'bg-emerald-100 text-emerald-700'
-                }`}
-              >
-                {gig.gig_type === 'hiring' ? '연주자 모집' : '팀 찾기'}
-              </span>
-            )}
-            {isExpired ? (
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-200 text-gray-500">
-                마감
-              </span>
-            ) : daysLeft !== null && daysLeft <= 7 && daysLeft >= 0 ? (
-              <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-red-100 text-red-600">
-                D-{daysLeft}
-              </span>
-            ) : null}
-          </div>
-          <span className="text-xs text-gray-400 shrink-0 ml-2">
-            {gig.region?.name || '지역미정'}
+        {/* 상단: 작곡가 좌, 유형 우 */}
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-medium text-gray-500 tracking-wide">
+            {composerName || ''}
+          </span>
+          <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-cream text-accent">
+            {gig.is_project ? '프로젝트' : ensembleType}
           </span>
         </div>
 
-        {gig.is_project && gig.piece_name && (
-          <p className="text-xs font-medium text-accent mb-1">🎼 {gig.piece_name}</p>
-        )}
-        <h3 className="font-bold text-gray-900 mb-1.5 leading-snug">{gig.title}</h3>
+        {/* 곡 제목 (한국어 — 메인) */}
+        <h3 className="text-[16px] font-bold text-gray-900 leading-snug mb-0.5">
+          {pieceTitle}
+        </h3>
 
-        <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-500 truncate max-w-[70%]">
-            {gig.author?.display_name} · {instrumentNames}
-            {gig.min_skill_level && ` · ${LEVEL_LABELS[gig.min_skill_level] ?? gig.min_skill_level}`}
-          </p>
-          <div className="flex items-center gap-2 shrink-0">
-            {gig.view_count > 0 && (
-              <span className="text-xs text-gray-300">👁 {gig.view_count}</span>
-            )}
-            {gig.event_date && (
-              <p className="text-xs text-gray-400">{gig.event_date}</p>
-            )}
-          </div>
+        {/* 영어 제목 */}
+        {pieceAltTitle && (
+          <p className="text-xs text-gray-400 mb-2">{pieceAltTitle}</p>
+        )}
+
+        {/* 지역 · 마감 · 작성자 */}
+        <div className="flex items-center gap-1 text-xs text-gray-500 mb-2.5 mt-2">
+          <span>{gig.region?.name || '지역미정'}</span>
+          {daysLeft !== null && !isExpired && (
+            <>
+              <span>·</span>
+              <span className={daysLeft <= 7 ? 'text-red-500 font-semibold' : ''}>
+                D-{daysLeft}
+              </span>
+            </>
+          )}
+          {isExpired && (
+            <>
+              <span>·</span>
+              <span className="text-gray-400">마감</span>
+            </>
+          )}
+          {gig.author?.display_name && (
+            <>
+              <span className="ml-auto text-gray-400">by {gig.author.display_name}</span>
+            </>
+          )}
         </div>
+
+        {/* 모집 악기 칩 */}
+        {instruments.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {instruments.map((name, i) => (
+              <span
+                key={i}
+                className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-600"
+              >
+                {name} 구함
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </Link>
   )
 }
 
 // ── 메인 페이지 ────────────────────────────────────────────────
-export default function GigsPage() {
+export default function GigsPageWrapper() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+      <GigsPage />
+    </Suspense>
+  )
+}
+
+function GigsPage() {
+  const searchParamsHook = useSearchParams()
+
   const [activeTab, setActiveTab]             = useState<'all' | 'hiring' | 'seeking' | 'project'>('all')
   const [selectedInstrument, setSelectedInstrument] = useState('전체')
   const [selectedRegion, setSelectedRegion]   = useState('전체')
   const [selectedPeriod, setSelectedPeriod]   = useState('전체')
   const [selectedLevel, setSelectedLevel]     = useState('전체')
   const [sortBy, setSortBy]                   = useState<SortOption>('latest')
-  const [searchQuery, setSearchQuery]         = useState('')
-  const [searchInput, setSearchInput]         = useState('')  // 디바운스용 입력 버퍼
+  const [searchQuery, setSearchQuery]         = useState(() => searchParamsHook.get('search') || '')
+  const [searchInput, setSearchInput]         = useState(() => searchParamsHook.get('search') || '')
 
   const [gigs, setGigs]       = useState<GigListItem[]>([])
   const [page, setPage]       = useState(0)

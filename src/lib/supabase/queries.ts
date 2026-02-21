@@ -39,6 +39,13 @@ export interface GigListItem {
   instruments: Array<{
     instrument: { name: string } | null
   }>
+  gig_pieces?: Array<{
+    piece: {
+      title: string
+      alternative_titles: string[] | null
+      composer: { name: string; name_ko: string | null; name_en: string | null } | null
+    } | null
+  }>
 }
 
 export interface FetchGigsResult {
@@ -116,6 +123,13 @@ export async function fetchGigs({
       author:user_profiles!gigs_user_id_fkey(display_name),
       instruments:gig_instruments(
         instrument:instruments(name)
+      ),
+      gig_pieces(
+        piece:pieces(
+          title,
+          alternative_titles,
+          composer:composers(name, name_ko, name_en)
+        )
       )
     `)
     .in('status', includeExpired ? ['active', 'closed', 'expired'] : ['active'])
