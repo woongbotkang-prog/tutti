@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Button } from '@/components/ui/button'
 import BottomNavBar from '@/components/BottomNavBar'
+import PieceGroupCard from '@/components/PieceGroupCard'
 import WelcomeToast from '@/components/WelcomeToast'
 import HomeSearchBar from '@/components/HomeSearchBar'
 
@@ -67,6 +68,51 @@ export default async function HomePage() {
     .select('piece:pieces(composer:composers(name_ko, name_en))')
     .not('piece_id', 'is', null)
     .limit(100)
+
+  // 지금 연주 중인 곡: 곡별 활성 팀 그룹핑
+  const { data: rawGigPieces } = await supabase
+    .from('gig_pieces')
+    .select(`
+      piece_id,
+      gig:gigs!inner(id, title, status,
+        region:regions(name),
+        author:user_profiles!gigs_user_id_fkey(display_name)
+      ),
+      piece:pieces!inner(id, title, period,
+        composer:composers(name_ko, name_en)
+      )
+    `)
+    .not('piece_id', 'is', null)
+    .eq('gig.status', 'active')
+
+  const pieceGroupMap: Record<string, any> = {}
+  for (const gp of (rawGigPieces || []) as any[]) {
+    const pid = gp.piece_id
+    if (!pieceGroupMap[pid]) {
+      pieceGroupMap[pid] = {
+        piece_id: pid,
+        piece_title: gp.piece?.title || '',
+        composer_name_ko: gp.piece?.composer?.name_ko || null,
+        composer_name_en: gp.piece?.composer?.name_en || null,
+        period: gp.piece?.period || null,
+        team_count: 0,
+        teams: [],
+      }
+    }
+    const gig = gp.gig
+    if (!pieceGroupMap[pid].teams.some((t: any) => t.gig_id === gig.id)) {
+      pieceGroupMap[pid].teams.push({
+        gig_id: gig.id,
+        gig_title: gig.title,
+        author_name: gig.author?.display_name || null,
+        region_name: Array.isArray(gig.region) ? gig.region[0]?.name || null : gig.region?.name || null,
+      })
+      pieceGroupMap[pid].team_count++
+    }
+  }
+  const groupedPieces = Object.values(pieceGroupMap)
+    .sort((a: any, b: any) => b.team_count - a.team_count)
+    .slice(0, 5)
 
   // 작곡가 빈도 집계
   const composerCounts: Record<string, { name_ko: string; name_en: string; count: number }> = {}
@@ -218,6 +264,25 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* 지금 연주 중인 곡 */}
+      {groupedPieces.length > 0 && (
+        <section style={{ maxWidth: '512px', margin: '0 auto', padding: '0 24px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+            <h2 style={{ fontSize: '18px', fontWeight: 700, color: INK }}>
+              🎵 지금 연주 중인 곡
+            </h2>
+            <Link href="/gigs" style={{ fontSize: '12px', color: ACCENT, fontWeight: 500, textDecoration: 'none' }}>
+              전체 보기 →
+            </Link>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            {groupedPieces.map((piece: any) => (
+              <PieceGroupCard key={piece.piece_id} piece={piece} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* 프로필 미완성 배너 */}
       {user && isProfileIncomplete && (
