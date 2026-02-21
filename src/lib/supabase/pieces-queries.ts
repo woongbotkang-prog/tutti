@@ -256,13 +256,26 @@ export async function searchPieces(
       { count: 'exact' }
     )
 
-  // 검색어 필터 (tsvector 사용)
+  // 검색어 필터 (퍼지 매칭 + tsvector)
   if (params.query?.trim()) {
-    // 검색어로 곡명 또는 작곡가명 검색
     const searchQuery = params.query.trim()
-    query = query.or(
-      `title.ilike.%${searchQuery}%,composer.name_en.ilike.%${searchQuery}%`
-    )
+
+    // fuzzy 검색으로 작곡가 ID 목록 가져오기 (alias + pg_trgm 유사도 포함)
+    const { data: fuzzyComposers } = await supabase.rpc('search_composers_fuzzy', {
+      search_text: searchQuery,
+    })
+
+    if (fuzzyComposers && fuzzyComposers.length > 0) {
+      const composerIds = (fuzzyComposers as Array<{ composer_id: string; relevance: number }>)
+        .map((c) => c.composer_id)
+      // 제목 ILIKE OR 작곡가 ID IN (fuzzy 결과)
+      query = query.or(
+        `title.ilike.%${searchQuery}%,composer_id.in.(${composerIds.join(',')})`
+      )
+    } else {
+      // fuzzy 결과 없으면 제목만 ILIKE
+      query = query.ilike('title', `%${searchQuery}%`)
+    }
   }
 
   // 시대 필터
@@ -625,11 +638,32 @@ export async function removePieceFromGig(
 // ============================================================
 
 /**
- * 작곡가 자동완성
+ * 작곡가 자동완성 (퍼지 매칭 포함)
  */
 export async function autocompleteComposer(query: string): Promise<ComposerAutocompleteResponse['data']> {
   const supabase = createClient()
 
+  // 1. fuzzy 검색으로 작곡가 ID 목록 가져오기 (alias + pg_trgm 유사도 포함)
+  const { data: fuzzyComposers } = await supabase.rpc('search_composers_fuzzy', {
+    search_text: query,
+  })
+
+  if (fuzzyComposers && fuzzyComposers.length > 0) {
+    const composerIds = (fuzzyComposers as Array<{ composer_id: string; relevance: number }>)
+      .map((c) => c.composer_id)
+
+    const { data, error } = await supabase
+      .from('composers')
+      .select('id, name_en, name_ko, name_original, period, birth_year, death_year, nationality')
+      .eq('is_active', true)
+      .in('id', composerIds)
+      .limit(20)
+
+    if (error) throw error
+    return data || []
+  }
+
+  // fuzzy 결과 없으면 기본 ILIKE 검색
   const { data, error } = await supabase
     .from('composers')
     .select('id, name_en, name_ko, name_original, period, birth_year, death_year, nationality')
