@@ -43,7 +43,7 @@ export interface GigListItem {
     piece: {
       title: string
       alternative_titles: string[] | null
-      composer: { name: string; name_ko: string | null; name_en: string | null } | null
+      composer: { name: string; name_ko: string | null } | null
     } | null
   }>
 }
@@ -128,7 +128,7 @@ export async function fetchGigs({
         piece:pieces(
           title,
           alternative_titles,
-          composer:composers(name, name_ko, name_en)
+          composer:composers(name, name_ko)
         )
       )
     `)
@@ -713,7 +713,7 @@ export interface PublicMusicianProfile {
     composer_name: string
     piece_name: string
     performance_ready: boolean
-    composer: { name_ko: string | null; name_en: string } | null
+    composer: { name_ko: string | null; name: string } | null
   }>
   reviews: Array<{
     id: string
@@ -739,7 +739,7 @@ export async function fetchPublicMusicianProfile(userId: string): Promise<Public
       ),
       repertoire:user_repertoire(
         id, composer_name, piece_name, performance_ready,
-        composer:composers(name_ko, name_en)
+        composer:composers(name_ko, name)
       )
       `
     )
