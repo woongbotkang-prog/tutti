@@ -46,7 +46,7 @@ export default async function ApplicationsPage() {
           <div className="text-center py-16 text-gray-400">
             <p className="text-4xl mb-3">📋</p>
             <p className="text-sm">아직 지원한 공고가 없어요</p>
-            <Link href="/gigs" className="inline-block mt-4 text-sm text-indigo-600 font-medium">공고 보러가기 →</Link>
+            <Link href="/gigs" className="inline-block mt-4 text-sm text-accent font-medium">공고 보러가기 →</Link>
           </div>
         ) : (
           applications.map(app => {
@@ -79,7 +79,7 @@ export default async function ApplicationsPage() {
                 {app.status === 'accepted' && (
                   <div className="mt-1 flex gap-1.5">
                     <Link href={chatRoomId ? `/chat/${chatRoomId}` : '/chat'} className="flex-1">
-                      <div className="bg-indigo-50 border border-indigo-100 rounded-xl px-4 py-2.5 text-sm font-medium text-indigo-600 hover:bg-indigo-100 transition-colors text-center">
+                      <div className="bg-cream border border-cream-dark rounded-xl px-4 py-2.5 text-sm font-medium text-accent hover:bg-cream transition-colors text-center">
                         💬 채팅
                       </div>
                     </Link>

@@ -177,10 +177,10 @@ export default function EditGigPage() {
                 type="button"
                 onClick={() => setGigType(val)}
                 className={`p-4 rounded-xl border-2 text-left transition-colors ${
-                  gigType === val ? 'border-indigo-500 bg-indigo-50' : 'border-gray-100'
+                  gigType === val ? 'border-accent bg-cream' : 'border-gray-100'
                 }`}
               >
-                <p className={`font-bold text-sm ${gigType === val ? 'text-indigo-700' : 'text-gray-900'}`}>{label}</p>
+                <p className={`font-bold text-sm ${gigType === val ? 'text-accent' : 'text-gray-900'}`}>{label}</p>
                 <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
               </button>
             ))}
@@ -204,7 +204,7 @@ export default function EditGigPage() {
               value={description}
               onChange={e => setDescription(e.target.value)}
               rows={5}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"
             />
           </div>
         </div>
@@ -220,8 +220,8 @@ export default function EditGigPage() {
                 onClick={() => toggleInstrument(inst)}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                   selectedInstruments.includes(inst)
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                    ? 'bg-ink text-white border-ink'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-cream-dark'
                 }`}
               >
                 {inst}
@@ -243,8 +243,8 @@ export default function EditGigPage() {
                   onClick={() => setSelectedRegion(r)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                     selectedRegion === r
-                      ? 'bg-indigo-600 text-white border-indigo-600'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                      ? 'bg-ink text-white border-ink'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-cream-dark'
                   }`}
                 >
                   {r}
@@ -261,7 +261,7 @@ export default function EditGigPage() {
                   type="button"
                   onClick={() => setMinLevel(l.value)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                    minLevel === l.value ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200'
+                    minLevel === l.value ? 'bg-ink text-white border-ink' : 'bg-white text-gray-600 border-gray-200'
                   }`}
                 >
                   {l.label}
@@ -280,7 +280,7 @@ export default function EditGigPage() {
             <button
               type="button"
               onClick={() => setIsPaid(p => !p)}
-              className={`w-12 h-6 rounded-full transition-colors ${isPaid ? 'bg-indigo-600' : 'bg-gray-200'}`}
+              className={`w-12 h-6 rounded-full transition-colors ${isPaid ? 'bg-ink' : 'bg-gray-200'}`}
             >
               <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5 ${isPaid ? 'translate-x-6' : ''}`} />
             </button>
@@ -302,7 +302,7 @@ export default function EditGigPage() {
           />
         </div>
 
-        <Button type="submit" size="full" isLoading={isLoading} className="bg-indigo-600 hover:bg-indigo-700">
+        <Button type="submit" size="full" isLoading={isLoading} className="bg-ink hover:bg-ink-light">
           수정 완료
         </Button>
       </form>

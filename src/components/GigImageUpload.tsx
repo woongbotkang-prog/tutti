@@ -134,11 +134,11 @@ export default function GigImageUpload({
           type="button"
           onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
-          className="w-full px-4 py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 text-sm font-medium hover:border-indigo-300 hover:text-indigo-600 transition-colors disabled:opacity-50"
+          className="w-full px-4 py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 text-sm font-medium hover:border-cream-dark hover:text-accent transition-colors disabled:opacity-50"
         >
           {uploading ? (
             <span className="flex items-center justify-center gap-2">
-              <span className="animate-spin w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full" />
+              <span className="animate-spin w-4 h-4 border-2 border-ink border-t-transparent rounded-full" />
               업로드 중...
             </span>
           ) : (

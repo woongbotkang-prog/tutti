@@ -89,7 +89,7 @@ export default async function PieceDetailPage({ params }: { params: { id: string
           </button>
         </Link>
         <Link href="/" className="shrink-0">
-          <span className="text-lg font-black text-indigo-600 tracking-tight">TUTTI</span>
+          <span className="text-lg font-black text-accent tracking-tight">TUTTI</span>
         </Link>
         <h1 className="font-bold text-gray-900 flex-1 truncate text-sm">{piece.title}</h1>
       </header>
@@ -99,12 +99,12 @@ export default async function PieceDetailPage({ params }: { params: { id: string
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
             {piece.period && (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-cream text-accent">
                 {PERIOD_LABELS[piece.period] || piece.period}
               </span>
             )}
             {piece.difficulty_level && (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-cream text-accent">
                 {LEVEL_LABELS[piece.difficulty_level] || piece.difficulty_level}
               </span>
             )}
@@ -181,18 +181,18 @@ export default async function PieceDetailPage({ params }: { params: { id: string
             <div className="space-y-2">
               {gigs.map((gig: any) => (
                 <Link key={gig.id} href={`/gigs/${gig.id}`}>
-                  <div className="flex items-start justify-between p-3 bg-gray-50 rounded-xl hover:bg-indigo-50 transition-colors">
+                  <div className="flex items-start justify-between p-3 bg-gray-50 rounded-xl hover:bg-cream transition-colors">
                     <div className="flex-1">
                       <div className="flex items-center gap-1.5 mb-1">
                         {gig.is_project ? (
-                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700">
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-cream text-accent">
                             프로젝트
                           </span>
                         ) : (
                           <span
                             className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full ${
                               gig.gig_type === 'hiring'
-                                ? 'bg-indigo-100 text-indigo-700'
+                                ? 'bg-cream text-accent'
                                 : 'bg-emerald-100 text-emerald-700'
                             }`}
                           >
@@ -224,12 +224,12 @@ export default async function PieceDetailPage({ params }: { params: { id: string
         )}
 
         {/* 공고 만들기 CTA */}
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl border border-indigo-100 p-5">
+        <div className="bg-gradient-to-r from-cream to-cream rounded-2xl border border-cream-dark p-5">
           <p className="text-sm text-gray-700 mb-3">
             이 곡으로 공고를 만들어 연주자를 모집하세요!
           </p>
           <Link href="/gigs/new">
-            <Button size="sm" className="w-full bg-indigo-600 hover:bg-indigo-700">
+            <Button size="sm" className="w-full bg-ink hover:bg-ink-light">
               새 공고 만들기
             </Button>
           </Link>

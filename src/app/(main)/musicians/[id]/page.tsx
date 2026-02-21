@@ -119,7 +119,7 @@ export default function MusicianProfilePage({ params }: { params: { id: string }
           <div className="flex items-center justify-center gap-2 mb-2">
             <h2 className="text-2xl font-bold">{profile.display_name}</h2>
             {profile.is_verified && (
-              <Verified className="w-5 h-5 text-indigo-600" />
+              <Verified className="w-5 h-5 text-accent" />
             )}
           </div>
 
@@ -139,7 +139,7 @@ export default function MusicianProfilePage({ params }: { params: { id: string }
           {/* Edit Button (only for own profile) */}
           {isOwnProfile && (
             <Link href="/profile">
-              <Button className="w-full bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg">
+              <Button className="w-full bg-ink hover:bg-ink-light text-white rounded-lg">
                 <Edit className="w-4 h-4 mr-2" />
                 프로필 수정
               </Button>
@@ -188,7 +188,7 @@ export default function MusicianProfilePage({ params }: { params: { id: string }
                 key={rep.id}
                 className={`p-3 rounded-xl border ${
                   rep.performance_ready
-                    ? 'bg-indigo-50 border-indigo-200'
+                    ? 'bg-cream border-cream-dark'
                     : 'bg-gray-50 border-gray-200'
                 }`}
               >
@@ -197,7 +197,7 @@ export default function MusicianProfilePage({ params }: { params: { id: string }
                   {rep.composer?.name_ko || rep.composer?.name_en || rep.composer_name}
                 </p>
                 {rep.performance_ready && (
-                  <p className="text-xs text-indigo-600 font-semibold mt-1">
+                  <p className="text-xs text-accent font-semibold mt-1">
                     공연 준비 완료
                   </p>
                 )}
@@ -233,7 +233,7 @@ export default function MusicianProfilePage({ params }: { params: { id: string }
                       {new Date(review.created_at).toLocaleDateString('ko-KR')}
                     </p>
                   </div>
-                  <div className="text-lg font-bold text-indigo-600 flex-shrink-0">
+                  <div className="text-lg font-bold text-accent flex-shrink-0">
                     {review.score.toFixed(1)}
                   </div>
                 </div>

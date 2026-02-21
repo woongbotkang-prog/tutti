@@ -120,13 +120,13 @@ export default function SignUpPage() {
               onClick={() => setUserType('individual')}
               className={`flex items-center gap-2.5 p-3.5 rounded-xl border-2 transition-all ${
                 userType === 'individual'
-                  ? 'border-indigo-500 bg-indigo-50'
+                  ? 'border-accent bg-cream'
                   : 'border-gray-100 hover:border-gray-200'
               }`}
             >
               <span className="text-2xl">🎻</span>
               <div className="text-left">
-                <p className={`text-sm font-bold ${userType === 'individual' ? 'text-indigo-700' : 'text-gray-900'}`}>
+                <p className={`text-sm font-bold ${userType === 'individual' ? 'text-accent' : 'text-gray-900'}`}>
                   개인 연주자
                 </p>
                 <p className="text-[10px] text-gray-400">솔로·앙상블 멤버</p>
@@ -138,13 +138,13 @@ export default function SignUpPage() {
               onClick={() => setUserType('organization')}
               className={`flex items-center gap-2.5 p-3.5 rounded-xl border-2 transition-all ${
                 userType === 'organization'
-                  ? 'border-indigo-500 bg-indigo-50'
+                  ? 'border-accent bg-cream'
                   : 'border-gray-100 hover:border-gray-200'
               }`}
             >
               <span className="text-2xl">🎼</span>
               <div className="text-left">
-                <p className={`text-sm font-bold ${userType === 'organization' ? 'text-indigo-700' : 'text-gray-900'}`}>
+                <p className={`text-sm font-bold ${userType === 'organization' ? 'text-accent' : 'text-gray-900'}`}>
                   단체
                 </p>
                 <p className="text-[10px] text-gray-400">오케스트라·실내악단</p>
@@ -243,25 +243,25 @@ export default function SignUpPage() {
               type="checkbox"
               checked={agreedToPrivacy}
               onChange={(e) => setAgreedToPrivacy(e.target.checked)}
-              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              className="mt-0.5 w-4 h-4 rounded border-gray-300 text-accent focus:ring-accent"
               required
             />
             <span className="text-xs text-gray-500 leading-relaxed">
-              <Link href="/terms" className="text-indigo-600 underline" target="_blank">이용약관</Link>
+              <Link href="/terms" className="text-accent underline" target="_blank">이용약관</Link>
               {' 및 '}
-              <Link href="/privacy" className="text-indigo-600 underline" target="_blank">개인정보처리방침</Link>
+              <Link href="/privacy" className="text-accent underline" target="_blank">개인정보처리방침</Link>
               에 동의합니다. (필수)
             </span>
           </label>
 
-          <Button type="submit" size="full" isLoading={isLoading} className="bg-indigo-600 hover:bg-indigo-700">
+          <Button type="submit" size="full" isLoading={isLoading} className="bg-ink hover:bg-ink-light">
             가입하기
           </Button>
         </form>
 
         <p className="text-center text-sm text-gray-500">
           이미 계정이 있으신가요?{' '}
-          <Link href="/login" className="font-semibold text-indigo-600 hover:underline">
+          <Link href="/login" className="font-semibold text-accent hover:underline">
             로그인
           </Link>
         </p>

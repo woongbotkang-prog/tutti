@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Home, Search, MessageCircle, Bell, User, Users } from 'lucide-react'
-import { fetchUnreadNotificationCount, fetchUnreadChatCount } from '@/lib/supabase/queries'
+import { Home, Search, MessageCircle, User } from 'lucide-react'
+import { fetchUnreadChatCount } from '@/lib/supabase/queries'
 
 interface NavItem {
   icon: typeof Search
@@ -14,12 +14,10 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { icon: Home,          label: '홈',       href: '/',              matchPrefix: '/' },
-  { icon: Search,        label: '공고',     href: '/gigs',          matchPrefix: '/gigs' },
-  { icon: Users,         label: '연주자',   href: '/musicians',     matchPrefix: '/musicians' },
-  { icon: MessageCircle, label: '채팅',     href: '/chat',          matchPrefix: '/chat' },
-  { icon: Bell,          label: '알림',     href: '/notifications', matchPrefix: '/notifications' },
-  { icon: User,          label: '프로필',   href: '/profile',       matchPrefix: '/profile' },
+  { icon: Home,          label: '홈',      href: '/',        matchPrefix: '/' },
+  { icon: Search,        label: '공고',    href: '/gigs',    matchPrefix: '/gigs' },
+  { icon: MessageCircle, label: '채팅',    href: '/chat',    matchPrefix: '/chat' },
+  { icon: User,          label: '내 정보', href: '/profile', matchPrefix: '/profile' },
 ]
 
 /** BottomNavBar를 숨겨야 하는 경로 패턴 */
@@ -44,27 +42,19 @@ function isActive(pathname: string, matchPrefix: string): boolean {
   if (matchPrefix === '/chat') {
     return pathname === '/chat' || pathname.startsWith('/chat/')
   }
-  if (matchPrefix === '/musicians') {
-    return pathname === '/musicians' || pathname.startsWith('/musicians/')
-  }
   return pathname.startsWith(matchPrefix)
 }
 
 export default function BottomNavBar() {
   const pathname = usePathname()
-  const [unreadCount, setUnreadCount] = useState(0)
   const [unreadChatCount, setUnreadChatCount] = useState(0)
 
   useEffect(() => {
     let mounted = true
     const load = async () => {
       try {
-        const [notifCount, chatCount] = await Promise.all([
-          fetchUnreadNotificationCount(),
-          fetchUnreadChatCount(),
-        ])
+        const chatCount = await fetchUnreadChatCount()
         if (mounted) {
-          setUnreadCount(notifCount)
           setUnreadChatCount(chatCount)
         }
       } catch {
@@ -86,7 +76,6 @@ export default function BottomNavBar() {
         {NAV_ITEMS.map((item) => {
           const Icon = item.icon
           const active = isActive(pathname, item.matchPrefix)
-          const isNotification = item.href === '/notifications'
           const isChat = item.href === '/chat'
 
           return (
@@ -96,18 +85,13 @@ export default function BottomNavBar() {
               aria-label={item.label}
               aria-current={active ? 'page' : undefined}
               className={`flex-1 flex flex-col items-center py-2.5 transition-colors ${
-                active ? 'text-indigo-600' : 'text-gray-400 hover:text-gray-600'
+                active ? 'text-accent' : 'text-gray-400 hover:text-gray-600'
               }`}
             >
               <div className="relative">
                 <Icon className="w-5 h-5" />
-                {isNotification && unreadCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
-                    {unreadCount > 99 ? '99+' : unreadCount}
-                  </span>
-                )}
                 {isChat && unreadChatCount > 0 && (
-                  <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 bg-indigo-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 bg-accent text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                     {unreadChatCount > 99 ? '99+' : unreadChatCount}
                   </span>
                 )}

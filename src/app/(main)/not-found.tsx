@@ -15,13 +15,13 @@ export default function NotFound() {
         <div className="flex flex-col gap-3">
           <Link
             href="/"
-            className="px-6 py-3 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition-colors"
+            className="px-6 py-3 bg-ink text-white text-sm font-bold rounded-xl hover:bg-ink-light transition-colors"
           >
             홈으로 돌아가기
           </Link>
           <Link
             href="/gigs"
-            className="px-6 py-3 border-2 border-indigo-200 text-indigo-600 text-sm font-bold rounded-xl hover:bg-indigo-50 transition-colors"
+            className="px-6 py-3 border-2 border-cream-dark text-accent text-sm font-bold rounded-xl hover:bg-cream transition-colors"
           >
             공고 둘러보기
           </Link>

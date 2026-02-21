@@ -268,8 +268,8 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
                 onClick={() => setFilterTab(tab.key)}
                 className={`px-2.5 py-1 rounded-full text-[11px] font-medium border transition-colors ${
                   filterTab === tab.key
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-gray-500 border-gray-200 hover:border-indigo-300'
+                    ? 'bg-ink text-white border-ink'
+                    : 'bg-white text-gray-500 border-gray-200 hover:border-cream-dark'
                 }`}
               >
                 {tab.label}
@@ -299,7 +299,7 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
                       {app.applicant?.avatar_url ? (
                         <img src={app.applicant.avatar_url} alt="" className="w-9 h-9 rounded-full object-cover" />
                       ) : (
-                        <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm">
+                        <div className="w-9 h-9 rounded-full bg-cream flex items-center justify-center text-accent font-bold text-sm">
                           {app.applicant?.display_name?.[0] ?? '?'}
                         </div>
                       )}
@@ -395,7 +395,7 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
                   {app.status === 'accepted' && (
                     <Link
                       href={chatRoomIds[app.id] ? `/chat/${chatRoomIds[app.id]}` : '/chat'}
-                      className="block w-full py-2.5 text-sm font-bold rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 transition-colors text-center mt-2"
+                      className="block w-full py-2.5 text-sm font-bold rounded-xl bg-ink text-white hover:bg-ink-light transition-colors text-center mt-2"
                     >
                       💬 채팅 바로가기
                     </Link>
@@ -411,7 +411,7 @@ export default function GigOwnerPanel({ gigId, gigTitle, applications: initialAp
       <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
         <h3 className="font-bold text-gray-900 mb-3">공고 관리</h3>
         <Link href={`/gigs/${gigId}/edit`}>
-          <button className="w-full py-3 text-sm font-bold rounded-xl border-2 border-indigo-200 text-indigo-600 hover:bg-indigo-50 transition-colors mb-3">
+          <button className="w-full py-3 text-sm font-bold rounded-xl border-2 border-cream-dark text-accent hover:bg-cream transition-colors mb-3">
             공고 수정하기
           </button>
         </Link>

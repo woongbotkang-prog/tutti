@@ -129,7 +129,7 @@ export default function ChatListPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-ink border-t-transparent rounded-full" />
       </div>
     )
   }
@@ -145,7 +145,7 @@ export default function ChatListPage() {
       <main className="max-w-2xl mx-auto">
       {rooms.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 px-8 text-center">
-          <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center mb-4">
+          <div className="w-16 h-16 rounded-full bg-cream flex items-center justify-center mb-4">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="1.5">
               <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
             </svg>
@@ -156,7 +156,7 @@ export default function ChatListPage() {
           </p>
           <Link
             href="/gigs"
-            className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-semibold rounded-xl hover:bg-indigo-700 transition-colors"
+            className="px-6 py-2.5 bg-ink text-white text-sm font-semibold rounded-xl hover:bg-ink-light transition-colors"
           >
             공고 보러가기
           </Link>
@@ -166,7 +166,7 @@ export default function ChatListPage() {
           {rooms.map(room => (
             <li key={room.id}>
               <Link href={`/chat/${room.id}`} className="flex items-center gap-4 px-4 py-4 hover:bg-gray-50 transition-colors">
-                <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-lg shrink-0">
+                <div className="w-12 h-12 rounded-full bg-cream flex items-center justify-center text-accent font-bold text-lg shrink-0">
                   {room.otherUserName?.[0] ?? '?'}
                 </div>
                 <div className="flex-1 min-w-0">
@@ -177,10 +177,10 @@ export default function ChatListPage() {
                   <p className={`text-xs truncate ${room.unreadCount > 0 ? 'text-gray-900 font-semibold' : 'text-gray-500'}`}>
                     {room.lastMessage}
                   </p>
-                  <p className="text-xs text-indigo-400 mt-0.5 truncate">{room.gigTitle}</p>
+                  <p className="text-xs text-accent-light mt-0.5 truncate">{room.gigTitle}</p>
                 </div>
                 {room.unreadCount > 0 && (
-                  <span className="w-5 h-5 rounded-full bg-indigo-600 text-white text-xs flex items-center justify-center font-bold shrink-0">
+                  <span className="w-5 h-5 rounded-full bg-ink text-white text-xs flex items-center justify-center font-bold shrink-0">
                     {room.unreadCount > 9 ? '9+' : room.unreadCount}
                   </span>
                 )}

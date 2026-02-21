@@ -76,7 +76,7 @@ export default function ApplyPage({ params }: { params: { id: string } }) {
             onChange={e => setMessage(e.target.value)}
             rows={6}
             maxLength={1000}
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"
           />
           <div className="flex items-center justify-between">
             <p className="text-xs text-gray-400">※ 메시지는 선택사항입니다</p>
@@ -84,7 +84,7 @@ export default function ApplyPage({ params }: { params: { id: string } }) {
           </div>
         </div>
 
-        <Button onClick={handleApply} size="full" isLoading={isLoading} className="bg-indigo-600 hover:bg-indigo-700">
+        <Button onClick={handleApply} size="full" isLoading={isLoading} className="bg-ink hover:bg-ink-light">
           지원 완료하기
         </Button>
       </main>

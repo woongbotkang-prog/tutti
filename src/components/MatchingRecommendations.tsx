@@ -36,7 +36,7 @@ export default function MatchingRecommendations() {
     return (
       <div className="px-4 py-6">
         <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-5 h-5 text-indigo-600" />
+          <Sparkles className="w-5 h-5 text-accent" />
           <h2 className="text-lg font-bold text-gray-900">추천 공고</h2>
         </div>
         <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4">
@@ -52,10 +52,10 @@ export default function MatchingRecommendations() {
     return (
       <div className="px-4 py-6">
         <div className="flex items-center gap-2 mb-4">
-          <Sparkles className="w-5 h-5 text-indigo-600" />
+          <Sparkles className="w-5 h-5 text-accent" />
           <h2 className="text-lg font-bold text-gray-900">추천 공고</h2>
         </div>
-        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100">
+        <div className="bg-gradient-to-br from-cream to-cream rounded-2xl p-6 border border-cream-dark">
           <p className="text-sm text-gray-600 text-center">
             아직 추천 공고가 없어요. 프로필을 완성하면 더 좋은 매칭을 받을 수 있어요!
           </p>
@@ -67,17 +67,17 @@ export default function MatchingRecommendations() {
   return (
     <div className="px-4 py-6">
       <div className="flex items-center gap-2 mb-4">
-        <Sparkles className="w-5 h-5 text-indigo-600" />
+        <Sparkles className="w-5 h-5 text-accent" />
         <h2 className="text-lg font-bold text-gray-900">추천 공고</h2>
       </div>
 
       <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory">
         {gigs.map((gig) => (
           <Link key={gig.gig_id} href={`/gigs/${gig.gig_id}`}>
-            <div className="flex-shrink-0 w-64 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-4 border border-indigo-200 hover:border-indigo-400 hover:shadow-lg transition-all active:scale-[0.98] snap-center cursor-pointer">
+            <div className="flex-shrink-0 w-64 bg-gradient-to-br from-cream to-cream rounded-2xl p-4 border border-cream-dark hover:border-accent hover:shadow-lg transition-all active:scale-[0.98] snap-center cursor-pointer">
               {/* Match Score */}
               <div className="mb-3 flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-indigo-600">{gig.match_score}%</span>
+                <span className="text-2xl font-bold text-accent">{gig.match_score}%</span>
                 <span className="text-xs text-gray-600 font-medium">매칭률</span>
               </div>
 
@@ -94,7 +94,7 @@ export default function MatchingRecommendations() {
                     gig.matching_factors.slice(0, 3).map((factor, idx) => (
                       <span
                         key={idx}
-                        className="text-xs px-2 py-1 rounded-full bg-white text-indigo-700 font-medium border border-indigo-200"
+                        className="text-xs px-2 py-1 rounded-full bg-white text-accent font-medium border border-cream-dark"
                       >
                         {factor}
                       </span>
@@ -106,7 +106,7 @@ export default function MatchingRecommendations() {
               </div>
 
               {/* Cta */}
-              <div className="mt-4 text-xs font-semibold text-indigo-600 flex items-center">
+              <div className="mt-4 text-xs font-semibold text-accent flex items-center">
                 자세히 보기 →
               </div>
             </div>

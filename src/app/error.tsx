@@ -14,7 +14,7 @@ export default function Error({
       <p className="text-sm text-gray-500 mb-6">잠시 후 다시 시도해주세요.</p>
       <button
         onClick={reset}
-        className="px-4 py-2 bg-indigo-600 text-white rounded-xl text-sm font-medium hover:bg-indigo-700 transition-colors"
+        className="px-4 py-2 bg-ink text-white rounded-xl text-sm font-medium hover:bg-ink-light transition-colors"
       >
         다시 시도
       </button>

@@ -214,7 +214,7 @@ export default function MusiciansPage() {
             <p className="text-gray-500 mb-2">검색 결과가 없습니다.</p>
             <button
               onClick={handleReset}
-              className="text-indigo-600 text-sm font-medium hover:underline"
+              className="text-accent text-sm font-medium hover:underline"
             >
               필터 초기화하기
             </button>
@@ -238,8 +238,8 @@ export default function MusiciansPage() {
                           className="w-16 h-16 rounded-full object-cover bg-gray-100"
                         />
                       ) : (
-                        <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center">
-                          <span className="text-xl font-bold text-indigo-600">
+                        <div className="w-16 h-16 rounded-full bg-cream flex items-center justify-center">
+                          <span className="text-xl font-bold text-accent">
                             {musician.display_name[0]}
                           </span>
                         </div>
@@ -271,7 +271,7 @@ export default function MusiciansPage() {
                           {musician.instruments.slice(0, 3).map((ui) => (
                             <span
                               key={ui.instrument?.name}
-                              className="inline-block px-2 py-1 bg-indigo-100 text-indigo-700 text-xs rounded-full font-medium"
+                              className="inline-block px-2 py-1 bg-cream text-accent text-xs rounded-full font-medium"
                             >
                               {ui.instrument?.name}
                             </span>

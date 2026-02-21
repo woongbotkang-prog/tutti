@@ -104,7 +104,7 @@ export default function ReviewsListPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-ink border-t-transparent rounded-full" />
       </div>
     )
   }
@@ -117,7 +117,7 @@ export default function ReviewsListPage() {
       <header className="bg-white px-4 py-4 border-b border-gray-100 sticky top-0 z-20">
         <button
           onClick={() => router.back()}
-          className="text-indigo-600 hover:text-indigo-700 text-sm font-medium mb-2"
+          className="text-accent hover:text-accent text-sm font-medium mb-2"
         >
           ← 돌아가기
         </button>
@@ -153,7 +153,7 @@ export default function ReviewsListPage() {
         {/* Empty State */}
         {hasNoReviews ? (
           <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
-            <div className="w-16 h-16 rounded-full bg-indigo-50 flex items-center justify-center mb-4 text-3xl">
+            <div className="w-16 h-16 rounded-full bg-cream flex items-center justify-center mb-4 text-3xl">
               📝
             </div>
             <h2 className="text-lg font-bold text-gray-900 mb-2">아직 받은 리뷰가 없어요</h2>
@@ -172,7 +172,7 @@ export default function ReviewsListPage() {
                     <div key={review.id} className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
                       {/* Reviewer Info */}
                       <div className="flex items-start gap-3 mb-3">
-                        <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-sm shrink-0">
+                        <div className="w-10 h-10 rounded-full bg-cream flex items-center justify-center text-accent font-bold text-sm shrink-0">
                           {review.reviewer?.display_name?.[0] ?? '?'}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -187,7 +187,7 @@ export default function ReviewsListPage() {
                       <div className="mb-3">
                         <div className="flex items-center gap-2">
                           <span className="text-lg">{getStarDisplay(review.score)}</span>
-                          <span className="text-sm font-semibold text-indigo-600">{review.score}점</span>
+                          <span className="text-sm font-semibold text-accent">{review.score}점</span>
                         </div>
                       </div>
 

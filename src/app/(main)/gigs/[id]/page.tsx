@@ -123,7 +123,7 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
           </button>
         </Link>
         <Link href="/" className="shrink-0">
-          <span className="text-lg font-black text-indigo-600 tracking-tight">TUTTI</span>
+          <span className="text-lg font-black text-accent tracking-tight">TUTTI</span>
         </Link>
         <h1 className="font-bold text-gray-900 flex-1 truncate text-sm">{gig.title}</h1>
       </header>
@@ -154,10 +154,10 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
             {gig.is_project ? (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">프로젝트</span>
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-cream text-accent">프로젝트</span>
             ) : (
               <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
-                gig.gig_type === 'hiring' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
+                gig.gig_type === 'hiring' ? 'bg-cream text-accent' : 'bg-emerald-100 text-emerald-700'
               }`}>
                 {gig.gig_type === 'hiring' ? '연주자 모집' : '팀 찾기'}
               </span>
@@ -166,27 +166,27 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
 
           {/* 연주 곡목 */}
           {gig.gig_pieces && gig.gig_pieces.length > 0 && (
-            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl px-4 py-3 mb-3">
-              <p className="text-xs font-bold text-purple-500 mb-2">연주 곡목</p>
+            <div className="bg-gradient-to-r from-cream to-cream rounded-xl px-4 py-3 mb-3">
+              <p className="text-xs font-bold text-accent mb-2">연주 곡목</p>
               <div className="space-y-1.5">
                 {gig.gig_pieces
                   .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
                   .map((gp: any, idx: number) => (
                     <div key={gp.id} className="flex items-start gap-2">
-                      <span className="text-xs font-bold text-purple-400 mt-0.5 w-4">{idx + 1}</span>
+                      <span className="text-xs font-bold text-accent-light mt-0.5 w-4">{idx + 1}</span>
                       <div>
-                        <p className="text-sm font-bold text-purple-700">
+                        <p className="text-sm font-bold text-accent">
                           {gp.piece?.title || gp.text_input}
                         </p>
                         {(gp.piece?.composer?.name_ko || gp.piece?.composer?.name_en) && (
-                          <p className="text-xs text-purple-500">{gp.piece.composer.name_ko || gp.piece.composer.name_en}</p>
+                          <p className="text-xs text-accent">{gp.piece.composer.name_ko || gp.piece.composer.name_en}</p>
                         )}
                         {gp.piece?.period && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-200/50 text-purple-600 inline-block mt-0.5">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-cream-dark text-accent inline-block mt-0.5">
                             #{({'baroque':'바로크','classical':'고전','romantic':'낭만','modern':'근현대','contemporary':'현대'} as Record<string,string>)[gp.piece.period] || gp.piece.period}
                           </span>
                         )}
-                        {gp.notes && <p className="text-xs text-purple-400 mt-0.5">{gp.notes}</p>}
+                        {gp.notes && <p className="text-xs text-accent-light mt-0.5">{gp.notes}</p>}
                       </div>
                     </div>
                   ))}
@@ -195,8 +195,8 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
           )}
           {/* Fallback for legacy single piece_name */}
           {(!gig.gig_pieces || gig.gig_pieces.length === 0) && gig.is_project && gig.piece_name && (
-            <div className="bg-gradient-to-r from-purple-50 to-indigo-50 rounded-xl px-3 py-2 mb-2">
-              <p className="text-sm font-bold text-purple-700">🎼 {gig.piece_name}</p>
+            <div className="bg-gradient-to-r from-cream to-cream rounded-xl px-3 py-2 mb-2">
+              <p className="text-sm font-bold text-accent">🎼 {gig.piece_name}</p>
             </div>
           )}
           <h2 className="text-xl font-black text-gray-900 mb-1">{gig.title}</h2>
@@ -234,7 +234,7 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
                     <span className="text-sm font-medium text-gray-700">
                       {gi.instrument?.name || '미지정'}
                     </span>
-                    <span className="text-sm font-bold text-indigo-600">
+                    <span className="text-sm font-bold text-accent">
                       {gi.count_needed}명
                     </span>
                   </div>
@@ -247,11 +247,11 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
               <>
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-gray-500">{gig.current_applicants}명 지원 중</span>
-                  <span className="text-xs font-bold text-indigo-600">총 {gig.max_applicants}명 모집</span>
+                  <span className="text-xs font-bold text-accent">총 {gig.max_applicants}명 모집</span>
                 </div>
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
                   <div
-                    className="h-full bg-indigo-500 rounded-full transition-all"
+                    className="h-full bg-ink rounded-full transition-all"
                     style={{ width: `${Math.min((gig.current_applicants / gig.max_applicants) * 100, 100)}%` }}
                   />
                 </div>
@@ -298,7 +298,7 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
           <div className="max-w-lg mx-auto">
             {!user ? (
               <Link href={`/login?next=/gigs/${params.id}`}>
-                <Button size="full" className="bg-indigo-600 hover:bg-indigo-700">
+                <Button size="full" className="bg-ink hover:bg-ink-light">
                   로그인 후 지원하기
                 </Button>
               </Link>
@@ -312,7 +312,7 @@ export default async function GigDetailPage({ params, searchParams }: { params: 
               </Button>
             ) : (
               <Link href={`/gigs/${params.id}/apply`}>
-                <Button size="full" className="bg-indigo-600 hover:bg-indigo-700">
+                <Button size="full" className="bg-ink hover:bg-ink-light">
                   지원하기
                 </Button>
               </Link>

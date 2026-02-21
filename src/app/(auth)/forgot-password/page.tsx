@@ -51,8 +51,8 @@ export default function ForgotPasswordPage() {
           <CardDescription>비밀번호 재설정 링크를 보냈습니다</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 pt-4">
-          <div className="bg-indigo-50 rounded-xl p-4 text-center">
-            <p className="text-sm text-indigo-700 font-medium">{email}</p>
+          <div className="bg-cream rounded-xl p-4 text-center">
+            <p className="text-sm text-accent font-medium">{email}</p>
             <p className="text-xs text-gray-500 mt-2">
               위 주소로 비밀번호 재설정 링크를 보냈습니다.<br />
               메일함을 확인해 주세요. (스팸함도 확인해 보세요)
@@ -61,7 +61,7 @@ export default function ForgotPasswordPage() {
           <div className="flex flex-col gap-2">
             <button
               onClick={() => { setSent(false); setEmail('') }}
-              className="text-sm text-indigo-600 hover:underline"
+              className="text-sm text-accent hover:underline"
             >
               다른 이메일로 다시 보내기
             </button>
@@ -99,13 +99,13 @@ export default function ForgotPasswordPage() {
             autoComplete="email"
           />
 
-          <Button type="submit" size="full" isLoading={isLoading} className="bg-indigo-600 hover:bg-indigo-700">
+          <Button type="submit" size="full" isLoading={isLoading} className="bg-ink hover:bg-ink-light">
             재설정 링크 보내기
           </Button>
         </form>
 
         <p className="text-center text-sm text-gray-500">
-          <Link href="/login" className="text-indigo-600 hover:underline">
+          <Link href="/login" className="text-accent hover:underline">
             로그인으로 돌아가기
           </Link>
         </p>

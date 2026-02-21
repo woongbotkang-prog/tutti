@@ -171,11 +171,11 @@ export default function NewGigPage() {
                 type="button"
                 onClick={() => setGigType(val)}
                 className={`p-4 rounded-xl border-2 text-left transition-colors ${
-                  gigType === val ? 'border-indigo-500 bg-indigo-50' : 'border-gray-100'
+                  gigType === val ? 'border-accent bg-cream' : 'border-gray-100'
                 }`}
               >
-                <p className={`font-bold text-sm ${gigType === val ? 'text-indigo-700' : 'text-gray-900'}`}>{label}</p>
-                <p className={`text-xs mt-0.5 ${gigType === val ? 'text-indigo-600' : 'text-gray-500'}`}>{desc}</p>
+                <p className={`font-bold text-sm ${gigType === val ? 'text-accent' : 'text-gray-900'}`}>{label}</p>
+                <p className={`text-xs mt-0.5 ${gigType === val ? 'text-accent' : 'text-gray-500'}`}>{desc}</p>
               </button>
             ))}
           </div>
@@ -187,19 +187,19 @@ export default function NewGigPage() {
             type="button"
             onClick={() => setIsProject(p => !p)}
             className={`w-full flex items-center justify-between p-3 rounded-xl border-2 transition-colors ${
-              isProject ? 'border-purple-400 bg-purple-50' : 'border-gray-100 bg-gray-50'
+              isProject ? 'border-accent bg-cream' : 'border-gray-100 bg-gray-50'
             }`}
           >
             <div className="flex items-center gap-2">
               <span className="text-lg">🎼</span>
               <div className="text-left">
-                <p className={`text-sm font-bold ${isProject ? 'text-purple-700' : 'text-gray-700'}`}>
+                <p className={`text-sm font-bold ${isProject ? 'text-accent' : 'text-gray-700'}`}>
                   곡 기반 프로젝트 모집
                 </p>
                 <p className="text-xs text-gray-400">내가 하고 싶은 곡으로 팀을 만들어요</p>
               </div>
             </div>
-            <div className={`w-12 h-6 rounded-full transition-colors flex items-center ${isProject ? 'bg-purple-500' : 'bg-gray-200'}`}>
+            <div className={`w-12 h-6 rounded-full transition-colors flex items-center ${isProject ? 'bg-cream0' : 'bg-gray-200'}`}>
               <div className={`w-5 h-5 rounded-full bg-white shadow transition-transform mx-0.5 ${isProject ? 'translate-x-6' : ''}`} />
             </div>
           </button>
@@ -208,7 +208,7 @@ export default function NewGigPage() {
               <button
                 type="button"
                 onClick={() => setShowPieceModal(true)}
-                className="w-full px-4 py-3 rounded-xl bg-purple-50 border-2 border-purple-200 text-purple-700 font-medium hover:bg-purple-100 transition-colors"
+                className="w-full px-4 py-3 rounded-xl bg-cream border-2 border-cream-dark text-accent font-medium hover:bg-cream transition-colors"
               >
                 + 곡 추가
               </button>
@@ -218,7 +218,7 @@ export default function NewGigPage() {
                   <p className="text-xs font-medium text-gray-500">선택된 곡</p>
                   <div className="space-y-1.5">
                     {pieces.map((piece, idx) => (
-                      <div key={idx} className="flex items-center justify-between p-2.5 bg-purple-50 rounded-lg text-sm">
+                      <div key={idx} className="flex items-center justify-between p-2.5 bg-cream rounded-lg text-sm">
                         <div className="flex-1">
                           <p className="font-medium text-gray-900">{piece.text_input}</p>
                           {piece.composer_name && (
@@ -266,7 +266,7 @@ export default function NewGigPage() {
               onChange={e => setDescription(e.target.value)}
               rows={5}
               maxLength={2000}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"
             />
             <p className="text-xs text-gray-400 text-right mt-1">{description.length}/2000</p>
           </div>
@@ -289,8 +289,8 @@ export default function NewGigPage() {
                 onClick={() => toggleInstrument(inst)}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                   inst in selectedInstruments
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                    ? 'bg-ink text-white border-ink'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-cream-dark'
                 }`}
               >
                 {inst}
@@ -303,21 +303,21 @@ export default function NewGigPage() {
             <div className="mt-4 space-y-2">
               <p className="text-xs font-medium text-gray-500">파트별 모집 인원</p>
               {Object.entries(selectedInstruments).map(([inst, count]) => (
-                <div key={inst} className="flex items-center justify-between py-2 px-3 bg-indigo-50 rounded-xl">
-                  <span className="text-sm font-medium text-indigo-700">{inst}</span>
+                <div key={inst} className="flex items-center justify-between py-2 px-3 bg-cream rounded-xl">
+                  <span className="text-sm font-medium text-accent">{inst}</span>
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
                       onClick={() => setInstrumentCount(inst, count - 1)}
-                      className="w-7 h-7 rounded-full bg-white border border-indigo-200 text-indigo-600 font-bold text-sm flex items-center justify-center"
+                      className="w-7 h-7 rounded-full bg-white border border-cream-dark text-accent font-bold text-sm flex items-center justify-center"
                     >
                       -
                     </button>
-                    <span className="text-sm font-bold text-indigo-700 w-6 text-center">{count}</span>
+                    <span className="text-sm font-bold text-accent w-6 text-center">{count}</span>
                     <button
                       type="button"
                       onClick={() => setInstrumentCount(inst, count + 1)}
-                      className="w-7 h-7 rounded-full bg-white border border-indigo-200 text-indigo-600 font-bold text-sm flex items-center justify-center"
+                      className="w-7 h-7 rounded-full bg-white border border-cream-dark text-accent font-bold text-sm flex items-center justify-center"
                     >
                       +
                     </button>
@@ -345,8 +345,8 @@ export default function NewGigPage() {
                   )}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                     selectedRegions.includes(r)
-                      ? 'bg-indigo-600 text-white border-indigo-600'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                      ? 'bg-ink text-white border-ink'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-cream-dark'
                   }`}
                 >
                   {r}
@@ -363,7 +363,7 @@ export default function NewGigPage() {
                   type="button"
                   onClick={() => setMinLevel(l.value)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                    minLevel === l.value ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-600 border-gray-200'
+                    minLevel === l.value ? 'bg-ink text-white border-ink' : 'bg-white text-gray-600 border-gray-200'
                   }`}
                 >
                   {l.label}
@@ -377,7 +377,7 @@ export default function NewGigPage() {
           <div>
             <label className="text-sm font-medium text-gray-700 block mb-1.5">모집 인원</label>
             {Object.keys(selectedInstruments).length > 0 ? (
-              <p className="text-sm text-indigo-600 font-bold bg-indigo-50 rounded-xl px-4 py-2.5">
+              <p className="text-sm text-accent font-bold bg-cream rounded-xl px-4 py-2.5">
                 파트별 합계: {Object.values(selectedInstruments).reduce((sum, n) => sum + n, 0)}명
               </p>
             ) : (
@@ -408,8 +408,8 @@ export default function NewGigPage() {
                   onClick={() => setRehearsalFrequency(prev => prev === freq ? '' : freq)}
                   className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                     rehearsalFrequency === freq
-                      ? 'bg-indigo-600 text-white border-indigo-600'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                      ? 'bg-ink text-white border-ink'
+                      : 'bg-white text-gray-600 border-gray-200 hover:border-cream-dark'
                   }`}
                 >
                   {freq}
@@ -422,13 +422,13 @@ export default function NewGigPage() {
               type="button"
               onClick={() => setSheetMusicProvided(p => !p)}
               className={`flex items-center gap-3 w-full p-3 rounded-xl border-2 transition-colors ${
-                sheetMusicProvided ? 'border-indigo-400 bg-indigo-50' : 'border-gray-100 bg-gray-50'
+                sheetMusicProvided ? 'border-accent bg-cream' : 'border-gray-100 bg-gray-50'
               }`}
             >
-              <div className={`w-5 h-5 rounded flex items-center justify-center ${sheetMusicProvided ? 'bg-indigo-600' : 'bg-white border border-gray-300'}`}>
+              <div className={`w-5 h-5 rounded flex items-center justify-center ${sheetMusicProvided ? 'bg-ink' : 'bg-white border border-gray-300'}`}>
                 {sheetMusicProvided && <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path d="M5 13l4 4L19 7"/></svg>}
               </div>
-              <span className={`text-sm font-medium ${sheetMusicProvided ? 'text-indigo-700' : 'text-gray-600'}`}>악보 제공</span>
+              <span className={`text-sm font-medium ${sheetMusicProvided ? 'text-accent' : 'text-gray-600'}`}>악보 제공</span>
             </button>
           </div>
         </div>
@@ -440,7 +440,7 @@ export default function NewGigPage() {
               type="checkbox"
               checked={photoTermsAgreed}
               onChange={e => setPhotoTermsAgreed(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              className="w-4 h-4 rounded border-gray-300 text-accent focus:ring-accent"
             />
             <span className="text-sm text-gray-600">
               사진 업로드 시 저작권·초상권 관련 안내를 확인했으며, 이에 동의합니다.
@@ -453,7 +453,7 @@ export default function NewGigPage() {
           size="full"
           isLoading={isLoading}
           disabled={gigImages.length > 0 && !photoTermsAgreed}
-          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-ink hover:bg-ink-light disabled:opacity-50 disabled:cursor-not-allowed"
         >
           공고 등록하기
         </Button>

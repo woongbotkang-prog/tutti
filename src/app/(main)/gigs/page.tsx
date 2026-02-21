@@ -78,18 +78,18 @@ function GigCard({ gig }: { gig: GigListItem }) {
 
   return (
     <Link href={`/gigs/${gig.id}`}>
-      <div className={`bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md hover:border-indigo-200 transition-all active:scale-[0.99] ${isExpired ? 'opacity-50' : ''}`}>
+      <div className={`bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md hover:border-cream-dark transition-all active:scale-[0.99] ${isExpired ? 'opacity-50' : ''}`}>
         <div className="flex items-start justify-between mb-2">
           <div className="flex items-center gap-1.5 flex-wrap">
             {gig.is_project ? (
-              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
+              <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-cream text-accent">
                 프로젝트
               </span>
             ) : (
               <span
                 className={`text-xs font-bold px-2 py-0.5 rounded-full ${
                   gig.gig_type === 'hiring'
-                    ? 'bg-indigo-100 text-indigo-700'
+                    ? 'bg-cream text-accent'
                     : 'bg-emerald-100 text-emerald-700'
                 }`}
               >
@@ -112,7 +112,7 @@ function GigCard({ gig }: { gig: GigListItem }) {
         </div>
 
         {gig.is_project && gig.piece_name && (
-          <p className="text-xs font-medium text-purple-600 mb-1">🎼 {gig.piece_name}</p>
+          <p className="text-xs font-medium text-accent mb-1">🎼 {gig.piece_name}</p>
         )}
         <h3 className="font-bold text-gray-900 mb-1.5 leading-snug">{gig.title}</h3>
 
@@ -259,10 +259,10 @@ export default function GigsPage() {
       <header className="bg-white sticky top-0 z-20 border-b border-gray-100">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/">
-            <span className="text-xl font-black text-indigo-600 tracking-tight">TUTTI</span>
+            <span className="text-xl font-black text-accent tracking-tight">TUTTI</span>
           </Link>
           <Link href="/gigs/new">
-            <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">+ 공고 올리기</Button>
+            <Button size="sm" className="bg-ink hover:bg-ink-light">+ 공고 올리기</Button>
           </Link>
         </div>
       </header>
@@ -282,8 +282,8 @@ export default function GigsPage() {
               className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab.key
                   ? tab.key === 'project'
-                    ? 'border-purple-600 text-purple-600'
-                    : 'border-indigo-600 text-indigo-600'
+                    ? 'border-ink text-accent'
+                    : 'border-ink text-accent'
                   : 'border-transparent text-gray-500'
               }`}
             >
@@ -302,7 +302,7 @@ export default function GigsPage() {
             value={searchInput}
             onChange={e => handleSearchChange(e.target.value)}
             placeholder="곡명, 공고 제목으로 검색..."
-            className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-indigo-400 focus:bg-white transition-colors"
+            className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-colors"
           />
           {searchInput && (
             <button
@@ -323,7 +323,7 @@ export default function GigsPage() {
           onChange={e => setSelectedInstrument(e.target.value)}
           className={`shrink-0 text-[11px] border rounded-full px-2.5 py-1 bg-white focus:outline-none transition-colors ${
             selectedInstrument !== '전체'
-              ? 'border-indigo-400 text-indigo-700 bg-indigo-50'
+              ? 'border-accent text-accent bg-cream'
               : 'border-gray-200 text-gray-600'
           }`}
         >
@@ -336,7 +336,7 @@ export default function GigsPage() {
           onChange={e => setSelectedRegion(e.target.value)}
           className={`shrink-0 text-[11px] border rounded-full px-2.5 py-1 bg-white focus:outline-none transition-colors ${
             selectedRegion !== '전체'
-              ? 'border-indigo-400 text-indigo-700 bg-indigo-50'
+              ? 'border-accent text-accent bg-cream'
               : 'border-gray-200 text-gray-600'
           }`}
         >
@@ -353,8 +353,8 @@ export default function GigsPage() {
             onClick={() => setSortBy(opt.key)}
             className={`shrink-0 text-[11px] px-2.5 py-1 rounded-full border transition-colors font-medium ${
               sortBy === opt.key
-                ? 'bg-indigo-600 text-white border-indigo-600'
-                : 'border-gray-200 text-gray-600 bg-white hover:border-indigo-300'
+                ? 'bg-ink text-white border-ink'
+                : 'border-gray-200 text-gray-600 bg-white hover:border-cream-dark'
             }`}
           >
             {opt.label}
@@ -388,7 +388,7 @@ export default function GigsPage() {
                 onChange={e => setSelectedPeriod(e.target.value)}
                 className={`w-full text-[11px] border rounded-lg px-2.5 py-1.5 bg-white focus:outline-none transition-colors ${
                   selectedPeriod !== '전체'
-                    ? 'border-indigo-400 text-indigo-700 bg-indigo-50'
+                    ? 'border-accent text-accent bg-cream'
                     : 'border-gray-300 text-gray-600'
                 }`}
               >
@@ -406,7 +406,7 @@ export default function GigsPage() {
                 onChange={e => setSelectedLevel(e.target.value)}
                 className={`w-full text-[11px] border rounded-lg px-2.5 py-1.5 bg-white focus:outline-none transition-colors ${
                   selectedLevel !== '전체'
-                    ? 'border-indigo-400 text-indigo-700 bg-indigo-50'
+                    ? 'border-accent text-accent bg-cream'
                     : 'border-gray-300 text-gray-600'
                 }`}
               >
@@ -458,7 +458,7 @@ export default function GigsPage() {
                 <p className="text-sm font-medium text-gray-500">해당하는 공고가 없어요</p>
                 <button
                   onClick={resetFilters}
-                  className="mt-3 text-xs text-indigo-600 underline underline-offset-2"
+                  className="mt-3 text-xs text-accent underline underline-offset-2"
                 >
                   필터 초기화
                 </button>
@@ -468,7 +468,7 @@ export default function GigsPage() {
                 <p className="text-sm font-medium text-gray-500">아직 공고가 없어요</p>
                 <p className="text-xs text-gray-400 mt-1">첫 번째 공고를 올려보세요!</p>
                 <Link href="/gigs/new">
-                  <Button size="sm" className="mt-4 bg-indigo-600 hover:bg-indigo-700">
+                  <Button size="sm" className="mt-4 bg-ink hover:bg-ink-light">
                     공고 올리기
                   </Button>
                 </Link>
@@ -498,7 +498,7 @@ export default function GigsPage() {
               <button
                 onClick={loadMore}
                 disabled={loadingMore}
-                className="w-full py-3 text-sm font-medium text-indigo-600 border border-indigo-200 rounded-2xl bg-white hover:bg-indigo-50 active:scale-[0.99] transition-all disabled:opacity-50"
+                className="w-full py-3 text-sm font-medium text-accent border border-cream-dark rounded-2xl bg-white hover:bg-cream active:scale-[0.99] transition-all disabled:opacity-50"
               >
                 {loadingMore ? '불러오는 중...' : '더보기'}
               </button>

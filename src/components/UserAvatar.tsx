@@ -25,7 +25,7 @@ export default function UserAvatar({
   // Priority: emoji > avatar_url > initial
   if (emoji) {
     return (
-      <div className={`${sizeClass} rounded-full bg-indigo-100 flex items-center justify-center ${className}`}>
+      <div className={`${sizeClass} rounded-full bg-cream flex items-center justify-center ${className}`}>
         {emoji}
       </div>
     )
@@ -44,7 +44,7 @@ export default function UserAvatar({
   // Fallback: first character of display name
   const initial = displayName?.[0] || '?'
   return (
-    <div className={`${sizeClass} rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold ${className}`}>
+    <div className={`${sizeClass} rounded-full bg-cream flex items-center justify-center text-accent font-bold ${className}`}>
       {initial}
     </div>
   )

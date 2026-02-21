@@ -42,7 +42,7 @@ export default class ErrorBoundary extends Component<Props, State> {
                 this.setState({ hasError: false, error: undefined })
                 window.location.reload()
               }}
-              className="px-6 py-2.5 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition-colors"
+              className="px-6 py-2.5 bg-ink text-white text-sm font-bold rounded-xl hover:bg-ink-light transition-colors"
             >
               새로고침
             </button>

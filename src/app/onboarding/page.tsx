@@ -211,8 +211,8 @@ export default function OnboardingPage() {
 
   if (checkingAuth) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
+      <div className="min-h-screen bg-gradient-to-b from-cream to-white flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-2 border-ink border-t-transparent rounded-full" />
       </div>
     )
   }
@@ -236,10 +236,10 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-50 to-white flex flex-col">
+    <div className="min-h-screen bg-gradient-to-b from-cream to-white flex flex-col">
       {/* 헤더 */}
       <header className="px-6 py-5 flex items-center justify-between">
-        <span className="text-2xl font-black text-indigo-600 tracking-tight">TUTTI</span>
+        <span className="text-2xl font-black text-accent tracking-tight">TUTTI</span>
         <span className="text-sm text-gray-400">{stepNumber}/{totalSteps}</span>
       </header>
 
@@ -247,7 +247,7 @@ export default function OnboardingPage() {
       <div className="px-6">
         <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
           <div
-            className="h-full bg-indigo-500 rounded-full transition-all duration-500"
+            className="h-full bg-ink rounded-full transition-all duration-500"
             style={{ width: `${(stepNumber / totalSteps) * 100}%` }}
           />
         </div>
@@ -271,22 +271,22 @@ export default function OnboardingPage() {
               <div className="grid grid-cols-2 gap-4">
                 <button
                   onClick={() => { setUserType('individual'); setStep('level') }}
-                  className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-gray-100 hover:border-indigo-400 hover:bg-indigo-50 transition-all group"
+                  className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-gray-100 hover:border-accent hover:bg-cream transition-all group"
                 >
                   <span className="text-5xl">🎻</span>
                   <div className="text-center">
-                    <p className="font-bold text-gray-900 group-hover:text-indigo-700">개인 연주자</p>
+                    <p className="font-bold text-gray-900 group-hover:text-accent">개인 연주자</p>
                     <p className="text-xs text-gray-500 mt-1">솔로이스트, 앙상블 멤버</p>
                   </div>
                 </button>
 
                 <button
                   onClick={() => { setUserType('organization'); setStep('profile') }}
-                  className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-gray-100 hover:border-indigo-400 hover:bg-indigo-50 transition-all group"
+                  className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-gray-100 hover:border-accent hover:bg-cream transition-all group"
                 >
                   <span className="text-5xl">🎼</span>
                   <div className="text-center">
-                    <p className="font-bold text-gray-900 group-hover:text-indigo-700">단체</p>
+                    <p className="font-bold text-gray-900 group-hover:text-accent">단체</p>
                     <p className="text-xs text-gray-500 mt-1">오케스트라, 실내악단</p>
                   </div>
                 </button>
@@ -306,8 +306,8 @@ export default function OnboardingPage() {
                         onClick={() => toggleInstrument(inst)}
                         className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-all ${
                           selectedInstruments.includes(inst)
-                            ? 'bg-indigo-600 text-white border-indigo-600 scale-105'
-                            : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                            ? 'bg-ink text-white border-ink scale-105'
+                            : 'bg-white text-gray-600 border-gray-200 hover:border-cream-dark'
                         }`}
                       >
                         {inst}
@@ -318,7 +318,7 @@ export default function OnboardingPage() {
                   <Button
                     onClick={() => setStep('level')}
                     disabled={selectedInstruments.length === 0}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40"
+                    className="w-full bg-ink hover:bg-ink-light disabled:opacity-40"
                   >
                     악기 선택 완료
                   </Button>
@@ -342,18 +342,18 @@ export default function OnboardingPage() {
                     onClick={() => setSkillLevel(level.value)}
                     className={`w-full flex items-center justify-between px-4 py-3.5 rounded-xl border-2 transition-all ${
                       skillLevel === level.value
-                        ? 'border-indigo-500 bg-indigo-50'
+                        ? 'border-accent bg-cream'
                         : 'border-gray-100 hover:border-gray-200'
                     }`}
                   >
                     <div className="text-left">
-                      <p className={`font-bold text-sm ${skillLevel === level.value ? 'text-indigo-700' : 'text-gray-900'}`}>
+                      <p className={`font-bold text-sm ${skillLevel === level.value ? 'text-accent' : 'text-gray-900'}`}>
                         {level.label}
                       </p>
                       <p className="text-xs text-gray-500 mt-0.5">{level.desc}</p>
                     </div>
                     {skillLevel === level.value && (
-                      <span className="text-indigo-500 text-lg">✓</span>
+                      <span className="text-accent text-lg">✓</span>
                     )}
                   </button>
                 ))}
@@ -369,7 +369,7 @@ export default function OnboardingPage() {
                 </Button>
                 <Button
                   onClick={() => setStep('profile')}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                  className="flex-1 bg-ink hover:bg-ink-light"
                 >
                   다음
                 </Button>
@@ -401,8 +401,8 @@ export default function OnboardingPage() {
                       onClick={() => setSelectedRegion(prev => prev === r ? '' : r)}
                       className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                         selectedRegion === r
-                          ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                          ? 'bg-ink text-white border-ink'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-cream-dark'
                       }`}
                     >
                       {r}
@@ -422,7 +422,7 @@ export default function OnboardingPage() {
                 <Button
                   onClick={handleComplete}
                   isLoading={isLoading}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                  className="flex-1 bg-ink hover:bg-ink-light"
                 >
                   시작하기 🎵
                 </Button>
@@ -441,22 +441,22 @@ export default function OnboardingPage() {
               <div className="grid grid-cols-2 gap-4">
                 <button
                   onClick={() => { setUserType('individual'); setStep('type-instrument') }}
-                  className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-gray-100 hover:border-indigo-400 hover:bg-indigo-50 transition-all group"
+                  className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-gray-100 hover:border-accent hover:bg-cream transition-all group"
                 >
                   <span className="text-5xl">🎻</span>
                   <div className="text-center">
-                    <p className="font-bold text-gray-900 group-hover:text-indigo-700">개인 연주자</p>
+                    <p className="font-bold text-gray-900 group-hover:text-accent">개인 연주자</p>
                     <p className="text-xs text-gray-500 mt-1">솔로이스트, 앙상블 멤버</p>
                   </div>
                 </button>
 
                 <button
                   onClick={() => { setUserType('organization'); setStep('profile') }}
-                  className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-indigo-400 bg-indigo-50 transition-all group"
+                  className="flex flex-col items-center gap-3 p-6 rounded-2xl border-2 border-accent bg-cream transition-all group"
                 >
                   <span className="text-5xl">🎼</span>
                   <div className="text-center">
-                    <p className="font-bold text-gray-900 text-indigo-700">단체</p>
+                    <p className="font-bold text-gray-900 text-accent">단체</p>
                     <p className="text-xs text-gray-500 mt-1">오케스트라, 실내악단</p>
                   </div>
                 </button>
@@ -488,8 +488,8 @@ export default function OnboardingPage() {
                       onClick={() => setSelectedRegion(prev => prev === r ? '' : r)}
                       className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                         selectedRegion === r
-                          ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                          ? 'bg-ink text-white border-ink'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-cream-dark'
                       }`}
                     >
                       {r}
@@ -508,7 +508,7 @@ export default function OnboardingPage() {
                 </Button>
                 <Button
                   onClick={() => setStep('music-identity')}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                  className="flex-1 bg-ink hover:bg-ink-light"
                 >
                   다음
                 </Button>
@@ -533,8 +533,8 @@ export default function OnboardingPage() {
                       onClick={() => togglePeriod(period.value)}
                       className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-all ${
                         selectedPeriods.includes(period.value)
-                          ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                          ? 'bg-ink text-white border-ink'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-cream-dark'
                       }`}
                     >
                       {period.label}
@@ -552,8 +552,8 @@ export default function OnboardingPage() {
                       onClick={() => toggleGenre(genre.value)}
                       className={`px-4 py-2 rounded-full text-sm font-medium border-2 transition-all ${
                         selectedGenres.includes(genre.value)
-                          ? 'bg-indigo-600 text-white border-indigo-600'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                          ? 'bg-ink text-white border-ink'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-cream-dark'
                       }`}
                     >
                       {genre.label}
@@ -573,7 +573,7 @@ export default function OnboardingPage() {
                 <Button
                   onClick={handleComplete}
                   isLoading={isLoading}
-                  className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                  className="flex-1 bg-ink hover:bg-ink-light"
                 >
                   시작하기 🎵
                 </Button>

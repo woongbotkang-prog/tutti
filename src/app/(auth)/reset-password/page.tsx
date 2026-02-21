@@ -81,7 +81,7 @@ export default function ResetPasswordPage() {
             잠시 후 로그인 페이지로 이동합니다...
           </p>
           <Link href="/login">
-            <Button size="full" className="bg-indigo-600 hover:bg-indigo-700">
+            <Button size="full" className="bg-ink hover:bg-ink-light">
               로그인하러 가기
             </Button>
           </Link>
@@ -100,7 +100,7 @@ export default function ResetPasswordPage() {
       <CardContent className="space-y-4 pt-4">
         {!sessionReady && !error ? (
           <div className="flex flex-col items-center gap-3 py-6">
-            <div className="animate-spin w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
+            <div className="animate-spin w-8 h-8 border-2 border-ink border-t-transparent rounded-full" />
             <p className="text-sm text-gray-500">인증 확인 중...</p>
           </div>
         ) : (
@@ -109,7 +109,7 @@ export default function ResetPasswordPage() {
               <div className="rounded-xl bg-red-50 p-3 text-sm text-red-600">
                 {error}
                 {error.includes('만료') && (
-                  <Link href="/forgot-password" className="block mt-2 text-indigo-600 hover:underline font-medium">
+                  <Link href="/forgot-password" className="block mt-2 text-accent hover:underline font-medium">
                     비밀번호 찾기 다시 시도하기
                   </Link>
                 )}
@@ -143,7 +143,7 @@ export default function ResetPasswordPage() {
               size="full"
               isLoading={isLoading}
               disabled={!sessionReady}
-              className="bg-indigo-600 hover:bg-indigo-700"
+              className="bg-ink hover:bg-ink-light"
             >
               비밀번호 변경하기
             </Button>
@@ -151,7 +151,7 @@ export default function ResetPasswordPage() {
         )}
 
         <p className="text-center text-sm text-gray-500">
-          <Link href="/login" className="text-indigo-600 hover:underline">
+          <Link href="/login" className="text-accent hover:underline">
             로그인으로 돌아가기
           </Link>
         </p>

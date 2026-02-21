@@ -194,7 +194,7 @@ export default function NotificationsPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-ink border-t-transparent rounded-full" />
       </div>
     )
   }
@@ -209,7 +209,7 @@ export default function NotificationsPage() {
             {unreadCount > 0 && (
               <button
                 onClick={handleMarkAllRead}
-                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                className="text-sm text-accent hover:text-accent font-medium"
               >
                 모두 읽음
               </button>
@@ -224,7 +224,7 @@ export default function NotificationsPage() {
                 onClick={() => setActiveCategory(tab.key)}
                 className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
                   activeCategory === tab.key
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-ink text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
@@ -258,7 +258,7 @@ export default function NotificationsPage() {
                           key={notification.id}
                           onClick={() => handleClick(notification)}
                           className={`w-full text-left px-4 py-3.5 flex items-start gap-3 transition-colors hover:bg-gray-50 active:bg-gray-100 ${
-                            !notification.is_read ? 'bg-indigo-50' : 'bg-white'
+                            !notification.is_read ? 'bg-cream' : 'bg-white'
                           }`}
                         >
                           <span className="text-xl mt-0.5 flex-shrink-0">
@@ -284,7 +284,7 @@ export default function NotificationsPage() {
                             </p>
                           </div>
                           {!notification.is_read && (
-                            <span className="w-2 h-2 bg-indigo-500 rounded-full mt-2 flex-shrink-0 animate-pulse" />
+                            <span className="w-2 h-2 bg-ink rounded-full mt-2 flex-shrink-0 animate-pulse" />
                           )}
                         </button>
                       ))}

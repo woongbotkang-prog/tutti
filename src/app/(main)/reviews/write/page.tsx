@@ -323,7 +323,7 @@ export default function ReviewWritePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-ink border-t-transparent rounded-full" />
       </div>
     )
   }
@@ -334,7 +334,7 @@ export default function ReviewWritePage() {
         <header className="bg-white px-4 py-4 border-b border-gray-100">
           <button
             onClick={() => router.back()}
-            className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+            className="text-accent hover:text-accent text-sm font-medium"
           >
             ← 돌아가기
           </button>
@@ -354,7 +354,7 @@ export default function ReviewWritePage() {
       <header className="bg-white px-4 py-4 border-b border-gray-100 sticky top-0 z-20">
         <button
           onClick={() => router.back()}
-          className="text-indigo-600 hover:text-indigo-700 text-sm font-medium"
+          className="text-accent hover:text-accent text-sm font-medium"
         >
           ← 돌아가기
         </button>
@@ -391,7 +391,7 @@ export default function ReviewWritePage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <p className="text-xs text-gray-500 mb-3">누가 나를 평가하나요?</p>
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-lg">
+            <div className="w-14 h-14 rounded-full bg-cream flex items-center justify-center text-accent font-bold text-lg">
               {revieweeInfo.displayName[0]}
             </div>
             <div>
@@ -413,7 +413,7 @@ export default function ReviewWritePage() {
                 onClick={() => setOverallScore(score)}
                 className={`w-12 h-12 rounded-xl text-2xl transition-all ${
                   overallScore >= score
-                    ? 'bg-indigo-100 text-indigo-600 scale-110'
+                    ? 'bg-cream text-accent scale-110'
                     : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
                 }`}
               >
@@ -448,7 +448,7 @@ export default function ReviewWritePage() {
                       }))}
                       className={`flex-1 h-8 rounded-lg text-sm font-medium transition-all ${
                         categoryScores[category.key] >= score
-                          ? 'bg-indigo-600 text-white'
+                          ? 'bg-ink text-white'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
                     >
@@ -470,7 +470,7 @@ export default function ReviewWritePage() {
             onChange={e => setComment(e.target.value)}
             maxLength={500}
             rows={5}
-            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+            className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"
           />
           <p className="text-xs text-gray-400 text-right mt-2">{comment.length}/500</p>
         </div>
@@ -481,7 +481,7 @@ export default function ReviewWritePage() {
           disabled={overallScore === 0 || comment.trim().length === 0}
           isLoading={submitting}
           size="full"
-          className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40"
+          className="bg-ink hover:bg-ink-light disabled:opacity-40"
         >
           리뷰 제출하기
         </Button>

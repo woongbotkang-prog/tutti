@@ -310,7 +310,7 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
       <div className="flex-1 px-4 py-4 space-y-3">
         {[1, 2, 3].map(i => (
           <div key={i} className={`flex ${i % 2 === 0 ? 'justify-end' : 'justify-start'}`}>
-            <div className={`rounded-2xl px-4 py-3 ${i % 2 === 0 ? 'bg-indigo-100' : 'bg-gray-100'} animate-pulse`}>
+            <div className={`rounded-2xl px-4 py-3 ${i % 2 === 0 ? 'bg-cream' : 'bg-gray-100'} animate-pulse`}>
               <div className="h-4 w-32 rounded" />
             </div>
           </div>
@@ -388,10 +388,10 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
           return (
             <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
               <div className={`max-w-[70%] sm:max-w-[60%] rounded-2xl px-4 py-2.5 ${
-                isMine ? 'bg-indigo-600 text-white rounded-br-sm' : 'bg-white text-gray-900 rounded-bl-sm shadow-sm'
+                isMine ? 'bg-ink text-white rounded-br-sm' : 'bg-white text-gray-900 rounded-bl-sm shadow-sm'
               } ${msg.id.startsWith('temp-') ? 'opacity-70' : ''}`}>
                 <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                <p className={`text-xs mt-1 ${isMine ? 'text-indigo-200' : 'text-gray-400'}`}>
+                <p className={`text-xs mt-1 ${isMine ? 'text-cream-dark' : 'text-gray-400'}`}>
                   {new Date(msg.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
                 </p>
               </div>
@@ -423,14 +423,14 @@ export default function ChatRoomPage({ params }: { params: { roomId: string } })
             placeholder="메시지를 입력하세요..."
             rows={1}
             maxLength={5000}
-            className="flex-1 rounded-2xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-indigo-400 resize-none overflow-hidden leading-5"
+            className="flex-1 rounded-2xl border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-accent resize-none overflow-hidden leading-5"
             style={{ maxHeight: '128px', minHeight: '40px' }}
             aria-label="메시지 입력"
           />
           <button
             onClick={handleSend}
             disabled={!newMessage.trim() || sending}
-            className="w-10 h-10 rounded-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-40 flex items-center justify-center transition-colors shrink-0 mb-0"
+            className="w-10 h-10 rounded-full bg-ink hover:bg-ink-light disabled:opacity-40 flex items-center justify-center transition-colors shrink-0 mb-0"
             aria-label="메시지 전송"
           >
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5">

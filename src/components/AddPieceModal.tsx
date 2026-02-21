@@ -170,13 +170,13 @@ export default function AddPieceModal({ isOpen, onClose, pieces, onPiecesChange 
         <div className="flex border-b">
           <button
             onClick={() => setMode('search')}
-            className={`flex-1 py-3 text-sm font-medium ${mode === 'search' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-400'}`}
+            className={`flex-1 py-3 text-sm font-medium ${mode === 'search' ? 'text-accent border-b-2 border-ink' : 'text-gray-400'}`}
           >
             <Search className="w-4 h-4 inline mr-1" />검색
           </button>
           <button
             onClick={() => setMode('manual')}
-            className={`flex-1 py-3 text-sm font-medium ${mode === 'manual' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-400'}`}
+            className={`flex-1 py-3 text-sm font-medium ${mode === 'manual' ? 'text-accent border-b-2 border-ink' : 'text-gray-400'}`}
           >
             <Plus className="w-4 h-4 inline mr-1" />직접 입력
           </button>
@@ -264,7 +264,7 @@ export default function AddPieceModal({ isOpen, onClose, pieces, onPiecesChange 
                       key={r.id}
                       onClick={() => addFromSearch(r)}
                       disabled={pieces.some(p => p.piece_id === r.id)}
-                      className="w-full text-left p-3 rounded-lg border hover:bg-indigo-50 hover:border-indigo-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full text-left p-3 rounded-lg border hover:bg-cream hover:border-cream-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <p className="font-medium text-sm">{r.title}</p>
                       <p className="text-xs text-gray-500 mt-0.5">
@@ -278,7 +278,7 @@ export default function AddPieceModal({ isOpen, onClose, pieces, onPiecesChange 
               {query && !isSearching && results.length === 0 && (
                 <div className="text-center py-4">
                   <p className="text-sm text-gray-500">검색 결과가 없습니다.</p>
-                  <button onClick={() => { setMode('manual'); setManualInput(query) }} className="text-sm text-indigo-600 font-medium mt-2">
+                  <button onClick={() => { setMode('manual'); setManualInput(query) }} className="text-sm text-accent font-medium mt-2">
                     직접 입력하기 →
                   </button>
                 </div>
@@ -313,7 +313,7 @@ export default function AddPieceModal({ isOpen, onClose, pieces, onPiecesChange 
                       <p className="text-sm font-medium truncate">{piece.text_input}</p>
                       {piece.composer_name && <p className="text-xs text-gray-500">{piece.composer_name}</p>}
                       {piece.period && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 inline-block mt-1">
+                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-cream text-accent inline-block mt-1">
                           #{periodKo[piece.period] || piece.period}
                         </span>
                       )}
@@ -347,7 +347,7 @@ export default function AddPieceModal({ isOpen, onClose, pieces, onPiecesChange 
           <Button variant="outline" className="flex-1" onClick={onClose}>
             취소
           </Button>
-          <Button className="flex-1 bg-indigo-600 hover:bg-indigo-700" onClick={onClose}>
+          <Button className="flex-1 bg-ink hover:bg-ink-light" onClick={onClose}>
             {pieces.length > 0 ? `${pieces.length}곡 확인` : '닫기'}
           </Button>
         </div>

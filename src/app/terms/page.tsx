@@ -10,7 +10,7 @@ export default function TermsPage() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white border-b border-gray-100 px-4 py-4">
         <div className="max-w-2xl mx-auto flex items-center gap-3">
-          <Link href="/" className="text-xl font-black text-indigo-600">TUTTI</Link>
+          <Link href="/" className="text-xl font-black text-accent">TUTTI</Link>
           <span className="text-gray-300">|</span>
           <h1 className="text-sm font-medium text-gray-600">이용약관</h1>
         </div>

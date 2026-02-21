@@ -185,7 +185,7 @@ export default function RepertoirePage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center pb-20">
-        <div className="animate-spin w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-ink border-t-transparent rounded-full" />
       </div>
     )
   }
@@ -202,7 +202,7 @@ export default function RepertoirePage() {
           {!showAddForm && (
             <Button
               onClick={() => setShowAddForm(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              className="bg-ink hover:bg-ink-light text-white"
               size="sm"
             >
               <Plus className="w-4 h-4 mr-1" />
@@ -215,7 +215,7 @@ export default function RepertoirePage() {
       <main className="max-w-lg mx-auto p-4">
         {/* Add Form */}
         {showAddForm && (
-          <div className="bg-white rounded-2xl border border-indigo-200 p-4 mb-4 shadow-md">
+          <div className="bg-white rounded-2xl border border-cream-dark p-4 mb-4 shadow-md">
             <h2 className="text-sm font-bold text-gray-900 mb-3">곡 추가하기</h2>
 
             {/* Search Form */}
@@ -238,7 +238,7 @@ export default function RepertoirePage() {
                     <button
                       key={piece.id}
                       onClick={() => selectPiece(piece)}
-                      className="w-full text-left p-2 rounded hover:bg-indigo-100 transition-colors"
+                      className="w-full text-left p-2 rounded hover:bg-cream transition-colors"
                     >
                       <p className="text-xs font-medium text-gray-900">{piece.title}</p>
                       <p className="text-xs text-gray-500">
@@ -296,7 +296,7 @@ export default function RepertoirePage() {
                   type="checkbox"
                   checked={performanceReady}
                   onChange={(e) => setPerformanceReady(e.target.checked)}
-                  className="w-4 h-4 rounded border-gray-300 text-indigo-600"
+                  className="w-4 h-4 rounded border-gray-300 text-accent"
                 />
                 <span className="text-xs font-medium text-gray-700">연주 가능</span>
               </label>
@@ -313,7 +313,7 @@ export default function RepertoirePage() {
                 취소
               </Button>
               <Button
-                className="flex-1 bg-indigo-600 hover:bg-indigo-700"
+                className="flex-1 bg-ink hover:bg-ink-light"
                 onClick={addPiece}
                 disabled={!customName.trim() || !customComposer.trim() || adding}
               >
@@ -336,7 +336,7 @@ export default function RepertoirePage() {
             {repertoire.map((item) => (
               <div
                 key={item.id}
-                className="bg-white rounded-2xl border border-gray-100 p-4 flex items-start justify-between hover:border-indigo-200 transition-all"
+                className="bg-white rounded-2xl border border-gray-100 p-4 flex items-start justify-between hover:border-cream-dark transition-all"
               >
                 <div className="flex-1 min-w-0">
                   <h3 className="text-sm font-bold text-gray-900">{item.piece_name}</h3>

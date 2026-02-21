@@ -33,7 +33,7 @@ const ICONS: Record<ToastType, string> = {
 const COLORS: Record<ToastType, string> = {
   success: 'bg-green-600',
   error: 'bg-red-600',
-  info: 'bg-indigo-600',
+  info: 'bg-ink',
   warning: 'bg-yellow-500',
 }
 

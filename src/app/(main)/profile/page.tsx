@@ -361,7 +361,7 @@ export default function ProfilePage() {
   if (initialLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-indigo-600 border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-2 border-ink border-t-transparent rounded-full" />
       </div>
     )
   }
@@ -399,7 +399,7 @@ export default function ProfilePage() {
               <button
                 type="button"
                 onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                className="text-sm text-indigo-600 hover:underline font-medium"
+                className="text-sm text-accent hover:underline font-medium"
               >
                 이모지 선택
               </button>
@@ -440,7 +440,7 @@ export default function ProfilePage() {
                     }}
                     className={`w-full aspect-square rounded-xl text-2xl flex items-center justify-center transition-all ${
                       avatarEmoji === emoji
-                        ? 'bg-indigo-100 border-2 border-indigo-500 scale-110'
+                        ? 'bg-cream border-2 border-accent scale-110'
                         : 'bg-gray-50 border border-gray-100 hover:bg-gray-100'
                     }`}
                   >
@@ -486,7 +486,7 @@ export default function ProfilePage() {
             <select
               value={selectedRegion}
               onChange={e => setSelectedRegion(e.target.value)}
-              className="w-full h-11 rounded-xl border border-gray-200 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              className="w-full h-11 rounded-xl border border-gray-200 px-4 text-sm focus:outline-none focus:ring-2 focus:ring-accent"
             >
               <option value="">지역 선택</option>
               {REGIONS.map(r => <option key={r} value={r}>{r}</option>)}
@@ -501,7 +501,7 @@ export default function ProfilePage() {
               onChange={e => setBio(e.target.value)}
               rows={3}
               maxLength={500}
-              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none"
+              className="w-full rounded-xl border border-gray-200 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-accent resize-none"
             />
             <p className="text-xs text-gray-400 text-right mt-1">{bio.length}/500</p>
           </div>
@@ -517,8 +517,8 @@ export default function ProfilePage() {
                 onClick={() => toggleInstrument(instrument)}
                 className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                   selectedInstruments.includes(instrument)
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-gray-600 border-gray-200 hover:border-indigo-300'
+                    ? 'bg-ink text-white border-ink'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-cream-dark'
                 }`}
               >
                 {instrument}
@@ -537,18 +537,18 @@ export default function ProfilePage() {
                 onClick={() => setPrimaryLevel(level.value)}
                 className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border-2 transition-colors ${
                   primaryLevel === level.value
-                    ? 'border-indigo-500 bg-indigo-50'
+                    ? 'border-accent bg-cream'
                     : 'border-gray-100 hover:border-gray-200'
                 }`}
               >
                 <div className="text-left">
-                  <p className={`font-bold text-sm ${primaryLevel === level.value ? 'text-indigo-700' : 'text-gray-900'}`}>
+                  <p className={`font-bold text-sm ${primaryLevel === level.value ? 'text-accent' : 'text-gray-900'}`}>
                     {level.label}
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">{level.desc}</p>
                 </div>
                 {primaryLevel === level.value && (
-                  <span className="text-indigo-500 text-lg">✓</span>
+                  <span className="text-accent text-lg">✓</span>
                 )}
               </button>
             ))}
@@ -594,8 +594,8 @@ export default function ProfilePage() {
                     onClick={() => togglePeriod(p.value)}
                     className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                       preferredPeriods.includes(p.value)
-                        ? 'bg-purple-600 text-white border-purple-600'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-purple-300'
+                        ? 'bg-ink text-white border-ink'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-cream-dark'
                     }`}
                   >
                     {p.label}
@@ -613,8 +613,8 @@ export default function ProfilePage() {
                     onClick={() => toggleGenre(g.value)}
                     className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
                       preferredGenres.includes(g.value)
-                        ? 'bg-purple-600 text-white border-purple-600'
-                        : 'bg-white text-gray-600 border-gray-200 hover:border-purple-300'
+                        ? 'bg-ink text-white border-ink'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-cream-dark'
                     }`}
                   >
                     {g.label}
@@ -629,12 +629,12 @@ export default function ProfilePage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <h2 className="font-bold text-gray-900 mb-4">활동 통계</h2>
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl p-4 text-center">
-              <p className="text-2xl font-black text-indigo-600">{activityStats.totalGigs}</p>
+            <div className="bg-gradient-to-br from-cream to-cream rounded-xl p-4 text-center">
+              <p className="text-2xl font-black text-accent">{activityStats.totalGigs}</p>
               <p className="text-xs text-gray-600 mt-1">올린 공고</p>
             </div>
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 text-center">
-              <p className="text-2xl font-black text-purple-600">{activityStats.totalApplicationsSent}</p>
+            <div className="bg-gradient-to-br from-cream to-cream rounded-xl p-4 text-center">
+              <p className="text-2xl font-black text-accent">{activityStats.totalApplicationsSent}</p>
               <p className="text-xs text-gray-600 mt-1">보낸 지원</p>
             </div>
             <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 text-center">
@@ -652,7 +652,7 @@ export default function ProfilePage() {
         <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-bold text-gray-900">내가 올린 공고</h2>
-            <Link href="/gigs/new" className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">
+            <Link href="/gigs/new" className="text-sm text-accent hover:text-accent font-medium">
               + 새 공고
             </Link>
           </div>
@@ -661,12 +661,12 @@ export default function ProfilePage() {
           ) : (
             <div className="space-y-2">
               {myGigs.map(gig => (
-                <Link key={gig.id} href={`/gigs/${gig.id}`} className="block p-3 rounded-xl border border-gray-100 hover:border-indigo-200 transition-colors">
+                <Link key={gig.id} href={`/gigs/${gig.id}`} className="block p-3 rounded-xl border border-gray-100 hover:border-cream-dark transition-colors">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 mb-1">
                         <span className={`inline-block px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          gig.gig_type === 'hiring' ? 'bg-indigo-100 text-indigo-700' : 'bg-emerald-100 text-emerald-700'
+                          gig.gig_type === 'hiring' ? 'bg-cream text-accent' : 'bg-emerald-100 text-emerald-700'
                         }`}>
                           {gig.gig_type === 'hiring' ? '연주자 모집' : '팀 찾기'}
                         </span>
@@ -688,7 +688,7 @@ export default function ProfilePage() {
           )}
         </div>
 
-        <Button onClick={handleSave} size="full" isLoading={loading} className="bg-indigo-600 hover:bg-indigo-700">
+        <Button onClick={handleSave} size="full" isLoading={loading} className="bg-ink hover:bg-ink-light">
           저장하기
         </Button>
 

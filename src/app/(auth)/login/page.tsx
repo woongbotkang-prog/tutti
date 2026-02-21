@@ -163,12 +163,12 @@ export default function LoginPage() {
           />
 
           <div className="flex justify-end">
-            <Link href="/forgot-password" className="text-xs text-indigo-600 hover:underline">
+            <Link href="/forgot-password" className="text-xs text-accent hover:underline">
               비밀번호를 잊으셨나요?
             </Link>
           </div>
 
-          <Button type="submit" size="full" isLoading={isLoading} className="mt-2 bg-indigo-600 hover:bg-indigo-700">
+          <Button type="submit" size="full" isLoading={isLoading} className="mt-2 bg-ink hover:bg-ink-light">
             로그인
           </Button>
         </form>
@@ -176,7 +176,7 @@ export default function LoginPage() {
         {/* 회원가입 링크 */}
         <p className="text-center text-sm text-gray-500">
           아직 계정이 없으신가요?{' '}
-          <Link href="/signup" className="font-semibold text-indigo-600 hover:underline">
+          <Link href="/signup" className="font-semibold text-accent hover:underline">
             회원가입
           </Link>
         </p>
