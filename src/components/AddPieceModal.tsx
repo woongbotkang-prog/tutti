@@ -3,14 +3,13 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
-import { X, Search, Plus, ChevronUp, ChevronDown, Trash2 } from 'lucide-react'
+import { X, Search, Plus, ChevronUp, ChevronDown, Trash2, CheckCircle2 } from 'lucide-react'
 
 interface PieceEntry {
   piece_id?: string
   text_input: string
   composer_name?: string
   period?: string
-  notes?: string
 }
 
 interface SearchResult {
@@ -101,32 +100,36 @@ export default function AddPieceModal({ isOpen, onClose, pieces, onPiecesChange 
 
   const fallbackKeywords = Array.from(new Set(CURATED_FALLBACK_PIECES.map(item => item.composer_name))).slice(0, 6)
 
-  const addCurated = (item: { title: string; composer_name: string; period: string }) => {
-    const exists = pieces.some(
-      p => p.text_input === item.title && (p.composer_name || '') === item.composer_name
-    )
-    if (exists) return
-    onPiecesChange([
-      ...pieces,
-      {
+  const isSelected = (id?: string, title?: string, composer?: string): boolean => {
+    if (id) return pieces.some(p => p.piece_id === id)
+    return pieces.some(p => p.text_input === title && (p.composer_name || '') === (composer || ''))
+  }
+
+  const toggleFromSearch = (result: SearchResult) => {
+    if (isSelected(result.id)) {
+      onPiecesChange(pieces.filter(p => p.piece_id !== result.id))
+    } else {
+      onPiecesChange([...pieces, {
+        piece_id: result.id,
+        text_input: result.title,
+        composer_name: result.composer_name_ko || result.composer_name,
+        period: result.period,
+      }])
+      setQuery('')
+      setResults([])
+    }
+  }
+
+  const toggleCurated = (item: { title: string; composer_name: string; period: string }) => {
+    if (isSelected(undefined, item.title, item.composer_name)) {
+      onPiecesChange(pieces.filter(p => !(p.text_input === item.title && (p.composer_name || '') === item.composer_name)))
+    } else {
+      onPiecesChange([...pieces, {
         text_input: item.title,
         composer_name: item.composer_name,
         period: item.period,
-      },
-    ])
-  }
-
-  const addFromSearch = (result: SearchResult) => {
-    const exists = pieces.some(p => p.piece_id === result.id)
-    if (exists) return
-    onPiecesChange([...pieces, {
-      piece_id: result.id,
-      text_input: result.title,
-      composer_name: result.composer_name_ko || result.composer_name,
-      period: result.period,
-    }])
-    setQuery('')
-    setResults([])
+      }])
+    }
   }
 
   const addManual = () => {
@@ -147,12 +150,6 @@ export default function AddPieceModal({ isOpen, onClose, pieces, onPiecesChange 
     onPiecesChange(arr)
   }
 
-  const updateNotes = (idx: number, notes: string) => {
-    const arr = [...pieces]
-    arr[idx] = { ...arr[idx], notes }
-    onPiecesChange(arr)
-  }
-
   if (!isOpen) return null
 
   return (
@@ -166,17 +163,48 @@ export default function AddPieceModal({ isOpen, onClose, pieces, onPiecesChange 
           </button>
         </div>
 
+        {/* 선택된 곡 패널 — sticky */}
+        {pieces.length > 0 && (
+          <div className="sticky top-0 z-10 bg-white border-b px-5 py-3">
+            <p className="text-xs font-bold text-accent mb-2">선택된 곡 ({pieces.length})</p>
+            <div className="space-y-1">
+              {pieces.map((piece, idx) => (
+                <div key={idx} className="flex items-center justify-between bg-cream rounded-lg px-3 py-2">
+                  <div className="flex items-center gap-2 flex-1 min-w-0">
+                    <span className="text-xs text-accent font-bold w-4">{idx + 1}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-medium text-gray-900 truncate">{piece.text_input}</p>
+                      {piece.composer_name && <p className="text-[10px] text-gray-500">{piece.composer_name}</p>}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-0.5 shrink-0 ml-2">
+                    <button onClick={() => movePiece(idx, -1)} disabled={idx === 0} className="p-1 hover:bg-gray-200 rounded disabled:opacity-30">
+                      <ChevronUp className="w-3 h-3" />
+                    </button>
+                    <button onClick={() => movePiece(idx, 1)} disabled={idx === pieces.length - 1} className="p-1 hover:bg-gray-200 rounded disabled:opacity-30">
+                      <ChevronDown className="w-3 h-3" />
+                    </button>
+                    <button onClick={() => removePiece(idx)} className="p-1 hover:bg-red-100 rounded text-red-500">
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* 탭: 검색 / 직접 입력 */}
         <div className="flex border-b">
           <button
             onClick={() => setMode('search')}
-            className={`flex-1 py-3 text-sm font-medium ${mode === 'search' ? 'text-accent border-b-2 border-ink' : 'text-gray-400'}`}
+            className={`flex-1 py-3 text-sm font-medium ${mode === 'search' ? 'text-accent border-b-2 border-accent' : 'text-gray-400'}`}
           >
             <Search className="w-4 h-4 inline mr-1" />검색
           </button>
           <button
             onClick={() => setMode('manual')}
-            className={`flex-1 py-3 text-sm font-medium ${mode === 'manual' ? 'text-accent border-b-2 border-ink' : 'text-gray-400'}`}
+            className={`flex-1 py-3 text-sm font-medium ${mode === 'manual' ? 'text-accent border-b-2 border-accent' : 'text-gray-400'}`}
           >
             <Plus className="w-4 h-4 inline mr-1" />직접 입력
           </button>
@@ -204,7 +232,7 @@ export default function AddPieceModal({ isOpen, onClose, pieces, onPiecesChange 
                             key={keyword}
                             type="button"
                             onClick={() => setQuery(keyword)}
-                            className="px-2.5 py-1 rounded-full text-xs bg-gray-100 text-gray-600 hover:bg-indigo-50 hover:text-indigo-700"
+                            className="px-2.5 py-1 rounded-full text-xs bg-gray-100 text-gray-600 hover:bg-cream hover:text-accent"
                           >
                             {keyword}
                           </button>
@@ -220,38 +248,70 @@ export default function AddPieceModal({ isOpen, onClose, pieces, onPiecesChange 
                     )}
                     {!isLoadingRecommended && recommended.length > 0 && (
                       <div className="space-y-2">
-                        {recommended.map((r) => (
-                          <button
-                            key={r.id}
-                            onClick={() => addFromSearch(r)}
-                            disabled={pieces.some(p => p.piece_id === r.id)}
-                            className="w-full text-left p-3 rounded-lg border hover:bg-indigo-50 hover:border-indigo-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <p className="font-medium text-sm">{r.title}</p>
-                            <p className="text-xs text-gray-500 mt-0.5">
-                              {r.composer_name_ko || r.composer_name || '작곡가 미상'}
-                              {r.period && <span className="ml-2 px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">#{periodKo[r.period] || r.period}</span>}
-                            </p>
-                          </button>
-                        ))}
+                        {recommended.map((r) => {
+                          const selected = isSelected(r.id)
+                          return (
+                            <button
+                              key={r.id}
+                              onClick={() => toggleFromSearch(r)}
+                              className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
+                                selected
+                                  ? 'border-accent bg-cream'
+                                  : 'border-gray-200 bg-white hover:border-accent/50 hover:bg-cream/50'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className={`font-medium text-sm ${selected ? 'text-accent' : ''}`}>{r.title}</p>
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    {r.composer_name_ko || r.composer_name || '작곡가 미상'}
+                                    {r.period && <span className="ml-2 px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">#{periodKo[r.period] || r.period}</span>}
+                                  </p>
+                                </div>
+                                {selected && (
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <CheckCircle2 className="w-4 h-4 text-accent" />
+                                    <span className="text-xs font-bold text-accent">선택됨</span>
+                                  </div>
+                                )}
+                              </div>
+                            </button>
+                          )
+                        })}
                       </div>
                     )}
                     {!isLoadingRecommended && recommended.length === 0 && (
                       <div className="space-y-2">
-                        {CURATED_FALLBACK_PIECES.map((r, idx) => (
-                          <button
-                            key={`${r.title}-${idx}`}
-                            onClick={() => addCurated(r)}
-                            disabled={pieces.some(p => p.text_input === r.title && (p.composer_name || '') === r.composer_name)}
-                            className="w-full text-left p-3 rounded-lg border hover:bg-indigo-50 hover:border-indigo-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <p className="font-medium text-sm">{r.title}</p>
-                            <p className="text-xs text-gray-500 mt-0.5">
-                              {r.composer_name}
-                              <span className="ml-2 px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">#{periodKo[r.period] || r.period}</span>
-                            </p>
-                          </button>
-                        ))}
+                        {CURATED_FALLBACK_PIECES.map((r, idx) => {
+                          const selected = isSelected(undefined, r.title, r.composer_name)
+                          return (
+                            <button
+                              key={`${r.title}-${idx}`}
+                              onClick={() => toggleCurated(r)}
+                              className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
+                                selected
+                                  ? 'border-accent bg-cream'
+                                  : 'border-gray-200 bg-white hover:border-accent/50 hover:bg-cream/50'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className={`font-medium text-sm ${selected ? 'text-accent' : ''}`}>{r.title}</p>
+                                  <p className="text-xs text-gray-500 mt-0.5">
+                                    {r.composer_name}
+                                    <span className="ml-2 px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">#{periodKo[r.period] || r.period}</span>
+                                  </p>
+                                </div>
+                                {selected && (
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <CheckCircle2 className="w-4 h-4 text-accent" />
+                                    <span className="text-xs font-bold text-accent">선택됨</span>
+                                  </div>
+                                )}
+                              </div>
+                            </button>
+                          )
+                        })}
                       </div>
                     )}
                   </div>
@@ -259,20 +319,36 @@ export default function AddPieceModal({ isOpen, onClose, pieces, onPiecesChange 
               )}
               {results.length > 0 && (
                 <div className="space-y-2">
-                  {results.map((r) => (
-                    <button
-                      key={r.id}
-                      onClick={() => addFromSearch(r)}
-                      disabled={pieces.some(p => p.piece_id === r.id)}
-                      className="w-full text-left p-3 rounded-lg border hover:bg-cream hover:border-cream-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <p className="font-medium text-sm">{r.title}</p>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {r.composer_name_ko || r.composer_name || '작곡가 미상'}
-                        {r.period && <span className="ml-2 px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">#{periodKo[r.period] || r.period}</span>}
-                      </p>
-                    </button>
-                  ))}
+                  {results.map((r) => {
+                    const selected = isSelected(r.id)
+                    return (
+                      <button
+                        key={r.id}
+                        onClick={() => toggleFromSearch(r)}
+                        className={`w-full text-left p-3 rounded-lg border-2 transition-colors ${
+                          selected
+                            ? 'border-accent bg-cream'
+                            : 'border-gray-200 bg-white hover:border-accent/50 hover:bg-cream/50'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="flex-1 min-w-0">
+                            <p className={`font-medium text-sm ${selected ? 'text-accent' : ''}`}>{r.title}</p>
+                            <p className="text-xs text-gray-500 mt-0.5">
+                              {r.composer_name_ko || r.composer_name || '작곡가 미상'}
+                              {r.period && <span className="ml-2 px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">#{periodKo[r.period] || r.period}</span>}
+                            </p>
+                          </div>
+                          {selected && (
+                            <div className="flex items-center gap-1 shrink-0">
+                              <CheckCircle2 className="w-4 h-4 text-accent" />
+                              <span className="text-xs font-bold text-accent">선택됨</span>
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               )}
               {query && !isSearching && results.length === 0 && (
@@ -293,51 +369,9 @@ export default function AddPieceModal({ isOpen, onClose, pieces, onPiecesChange 
                 onKeyDown={(e) => e.key === 'Enter' && addManual()}
                 autoFocus
               />
-              <Button onClick={addManual} disabled={!manualInput.trim()} size="sm">
+              <Button onClick={addManual} disabled={!manualInput.trim()} size="sm" className="bg-ink text-white">
                 추가
               </Button>
-            </div>
-          )}
-
-          {/* 추가된 곡 목록 */}
-          {pieces.length > 0 && (
-            <div className="border-t pt-4">
-              <p className="text-sm font-medium text-gray-700 mb-2">
-                선택된 곡 ({pieces.length}곡)
-              </p>
-              <div className="space-y-2">
-                {pieces.map((piece, idx) => (
-                  <div key={idx} className="flex items-start gap-2 p-3 bg-gray-50 rounded-lg">
-                    <span className="text-xs font-bold text-gray-400 mt-1 w-5 text-center">{idx + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{piece.text_input}</p>
-                      {piece.composer_name && <p className="text-xs text-gray-500">{piece.composer_name}</p>}
-                      {piece.period && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-cream text-accent inline-block mt-1">
-                          #{periodKo[piece.period] || piece.period}
-                        </span>
-                      )}
-                      <Input
-                        placeholder="특이사항 (선택)"
-                        value={piece.notes || ''}
-                        onChange={(e) => updateNotes(idx, e.target.value)}
-                        className="mt-2 text-xs h-8"
-                      />
-                    </div>
-                    <div className="flex flex-col gap-0.5">
-                      <button onClick={() => movePiece(idx, -1)} disabled={idx === 0} className="p-1 hover:bg-gray-200 rounded disabled:opacity-30">
-                        <ChevronUp className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => movePiece(idx, 1)} disabled={idx === pieces.length - 1} className="p-1 hover:bg-gray-200 rounded disabled:opacity-30">
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      </button>
-                      <button onClick={() => removePiece(idx)} className="p-1 hover:bg-red-100 rounded text-red-500">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
           )}
         </div>
@@ -347,8 +381,8 @@ export default function AddPieceModal({ isOpen, onClose, pieces, onPiecesChange 
           <Button variant="outline" className="flex-1" onClick={onClose}>
             취소
           </Button>
-          <Button className="flex-1 bg-ink hover:bg-ink-light" onClick={onClose}>
-            {pieces.length > 0 ? `${pieces.length}곡 확인` : '닫기'}
+          <Button className="flex-1 bg-accent text-white hover:bg-accent/90" onClick={onClose}>
+            {pieces.length > 0 ? `${pieces.length}곡 선택 완료` : '닫기'}
           </Button>
         </div>
       </div>

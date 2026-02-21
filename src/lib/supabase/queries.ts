@@ -9,6 +9,7 @@ export type SortOption = 'latest' | 'expiring' | 'popular'
 
 export interface FetchGigsParams {
   gigType?: 'hiring' | 'seeking'
+  gigCategory?: 'orchestra' | 'chamber'
   instrumentName?: string
   regionName?: string
   period?: string
@@ -34,6 +35,8 @@ export interface GigListItem {
   expires_at: string | null
   view_count: number
   min_skill_level: string | null
+  ensemble_name?: string | null
+  gig_category?: 'orchestra' | 'chamber' | null
   region: { name: string } | null
   author: { display_name: string } | null
   instruments: Array<{
@@ -55,6 +58,7 @@ export interface FetchGigsResult {
 
 export async function fetchGigs({
   gigType,
+  gigCategory,
   instrumentName,
   regionName,
   period,
@@ -118,7 +122,7 @@ export async function fetchGigs({
   let query = supabase
     .from('gigs')
     .select(`
-      id, gig_type, status, title, is_paid, is_project, piece_name, composer_id, event_date, expires_at, view_count, min_skill_level,
+      id, gig_type, status, title, is_paid, is_project, piece_name, composer_id, event_date, expires_at, view_count, min_skill_level, ensemble_name, gig_category,
       region:regions(name),
       author:user_profiles!gigs_user_id_fkey(display_name),
       instruments:gig_instruments(
@@ -136,6 +140,7 @@ export async function fetchGigs({
 
   if (gigType) query = query.eq('gig_type', gigType)
   if (isProject === true) query = query.eq('is_project', true)
+  if (gigCategory) query = query.eq('gig_category', gigCategory)
   if (regionId) query = query.eq('region_id', regionId)
   if (allowedGigIds) query = query.in('id', allowedGigIds)
   if (periodFilteredGigIds) query = query.in('id', periodFilteredGigIds)

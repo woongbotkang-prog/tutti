@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
+import imageCompression from 'browser-image-compression'
 import { createClient } from '@/lib/supabase/client'
 
 interface GigImageUploadProps {
@@ -16,10 +17,11 @@ export default function GigImageUpload({
   images,
   onChange,
   maxImages = 3,
-  maxSizeMB = 5,
+  maxSizeMB = 10,
 }: GigImageUploadProps) {
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [compressing, setCompressing] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
 
@@ -58,12 +60,22 @@ export default function GigImageUpload({
       const newUrls: string[] = []
 
       for (const file of filesToUpload) {
+        // 자동 리사이즈 (2MB 이하, 최대 1920px)
+        setCompressing(true)
+        const compressionOptions = {
+          maxSizeMB: 2,
+          maxWidthOrHeight: 1920,
+          useWebWorker: true,
+        }
+        const compressedFile = await imageCompression(file, compressionOptions)
+        setCompressing(false)
+
         const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg'
         const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 
         const { error: uploadError } = await supabase.storage
           .from('gig-images')
-          .upload(fileName, file, { upsert: false })
+          .upload(fileName, compressedFile, { upsert: false })
 
         if (uploadError) throw uploadError
 
@@ -79,6 +91,7 @@ export default function GigImageUpload({
       console.error('이미지 업로드 실패:', err)
       setError('이미지 업로드에 실패했어요. 다시 시도해 주세요.')
     } finally {
+      setCompressing(false)
       setUploading(false)
       // Reset input
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -89,12 +102,14 @@ export default function GigImageUpload({
     onChange(images.filter((_, i) => i !== index))
   }
 
+  const isProcessing = uploading || compressing
+
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm font-medium text-gray-700">사진 첨부</p>
-          <p className="text-xs text-gray-400">최대 {maxImages}장, 장당 {maxSizeMB}MB</p>
+          <p className="text-xs text-gray-400">최대 {maxImages}장, 장당 {maxSizeMB}MB (자동 최적화)</p>
         </div>
         <span className="text-xs text-gray-400">{images.length}/{maxImages}</span>
       </div>
@@ -133,10 +148,15 @@ export default function GigImageUpload({
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
-          disabled={uploading}
+          disabled={isProcessing}
           className="w-full px-4 py-3 rounded-xl border-2 border-dashed border-gray-200 text-gray-500 text-sm font-medium hover:border-cream-dark hover:text-accent transition-colors disabled:opacity-50"
         >
-          {uploading ? (
+          {compressing ? (
+            <span className="flex items-center justify-center gap-2">
+              <span className="animate-spin w-4 h-4 border-2 border-accent border-t-transparent rounded-full" />
+              최적화 중...
+            </span>
+          ) : uploading ? (
             <span className="flex items-center justify-center gap-2">
               <span className="animate-spin w-4 h-4 border-2 border-ink border-t-transparent rounded-full" />
               업로드 중...

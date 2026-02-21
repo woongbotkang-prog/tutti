@@ -9,42 +9,22 @@ import HomeSearchBar from '@/components/HomeSearchBar'
 
 export const revalidate = 3600 // ISR: 1시간
 
-// 색상 상수
-const INK = '#1a1a1a'
-const ACCENT = '#b8860b'
-const CREAM = '#faf8f5'
-const WARM_WHITE = '#fffef9'
-
 export default async function HomePage() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
-  // 최신 공고 (작성자명 포함)
+  // 최신 공고 (ensemble_name 포함)
   const { data: latestGigs } = await supabase
     .from('gigs')
     .select(`
-      id, title, gig_type, is_project, piece_name, gig_pieces_count, created_at,
+      id, title, ensemble_name, piece_name, gig_pieces_count, created_at,
       region:regions(name),
       author:user_profiles!gigs_user_id_fkey(display_name, user_type),
       gig_pieces(id, text_input, piece:pieces(title, period, composer:composers(name_en, name_ko)))
     `)
     .eq('status', 'active')
     .order('created_at', { ascending: false })
-    .limit(5)
-
-  // 곡 기반 프로젝트 공고 (작성자명 포함)
-  const { data: projectGigs } = await supabase
-    .from('gigs')
-    .select(`
-      id, title, piece_name, gig_pieces_count, created_at,
-      region:regions(name),
-      author:user_profiles!gigs_user_id_fkey(display_name, user_type),
-      gig_pieces(id, text_input, piece:pieces(title, period, composer:composers(name_en, name_ko)))
-    `)
-    .eq('status', 'active')
-    .eq('is_project', true)
-    .order('created_at', { ascending: false })
-    .limit(3)
+    .limit(8)
 
   // 곡 중심 통계: distinct piece count
   const { count: piecesCount } = await supabase
@@ -69,7 +49,7 @@ export default async function HomePage() {
     .not('piece_id', 'is', null)
     .limit(100)
 
-  // 지금 연주 중인 곡: 곡별 활성 팀 그룹핑
+  // 지금 모집 중인 곡: 곡별 활성 팀 그룹핑
   const { data: rawGigPieces } = await supabase
     .from('gig_pieces')
     .select(`
@@ -145,45 +125,37 @@ export default async function HomePage() {
     }
   }
 
-  // 곡 이름 추출 헬퍼
-  const getPieceNames = (gig: any): string[] => {
+  // 작곡가명 추출 헬퍼 (최근 등록 카드용)
+  const getComposerName = (gig: any): string | null => {
     const pieces = gig.gig_pieces || []
     if (pieces.length > 0) {
-      return pieces.map((gp: any) => gp.piece?.title || gp.text_input).filter(Boolean)
+      const composer = pieces[0]?.piece?.composer
+      return composer?.name_ko || composer?.name_en || null
     }
-    return gig.piece_name ? [gig.piece_name] : []
+    return null
   }
 
-  // 시대 태그 추출 헬퍼
-  const getPeriodTags = (gig: any): string[] => {
+  // 곡 제목 추출 헬퍼 (최근 등록 카드용)
+  const getPieceTitle = (gig: any): string => {
     const pieces = gig.gig_pieces || []
-    return [...new Set(pieces.map((gp: any) => gp.piece?.period).filter(Boolean))] as string[]
-  }
-
-  const periodKo: Record<string, string> = {
-    baroque: '바로크', classical: '고전', romantic: '낭만',
-    modern: '근현대', contemporary: '현대'
-  }
-
-  // 작성자명 추출 헬퍼
-  const getAuthorName = (gig: any): string | null => {
-    const author = gig.author
-    if (!author) return null
-    return author.display_name || null
+    if (pieces.length > 0) {
+      return pieces[0]?.piece?.title || pieces[0]?.text_input || gig.piece_name || gig.title
+    }
+    return gig.piece_name || gig.title
   }
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: CREAM, paddingBottom: '96px' }}>
+    <div className="min-h-screen bg-cream pb-24">
       <Suspense fallback={null}><WelcomeToast /></Suspense>
 
       {/* 헤더 */}
-      <header style={{ padding: '16px 24px', maxWidth: '512px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <header className="px-6 py-4 max-w-lg mx-auto flex items-center justify-between">
         <Link href="/">
-          <span style={{ fontSize: '24px', fontWeight: 900, color: ACCENT, letterSpacing: '-0.025em' }}>TUTTI</span>
+          <span className="text-2xl font-black text-accent tracking-tight">TUTTI</span>
         </Link>
         {user ? (
           <Link href="/profile">
-            <div style={{ width: '36px', height: '36px', borderRadius: '50%', backgroundColor: '#f0e6d3', display: 'flex', alignItems: 'center', justifyContent: 'center', color: ACCENT, fontWeight: 700, fontSize: '14px' }}>
+            <div className="w-9 h-9 rounded-full bg-cream flex items-center justify-center text-accent font-bold text-sm">
               나
             </div>
           </Link>
@@ -194,89 +166,38 @@ export default async function HomePage() {
         )}
       </header>
 
-      {/* 히어로 — 간소화 + 검색 바 */}
-      <section style={{ padding: '24px 24px 32px', maxWidth: '512px', margin: '0 auto', textAlign: 'center' }}>
-        <h1 style={{ fontSize: '28px', fontWeight: 900, color: INK, lineHeight: 1.3, marginBottom: '8px' }}>
+      {/* 히어로 — 검색 바 */}
+      <section className="px-6 pt-6 pb-8 max-w-lg mx-auto text-center">
+        <h1 className="text-[28px] font-black text-ink leading-tight mb-6">
           함께 연주할 동료를 찾으세요
         </h1>
-        <p style={{ color: '#888', fontSize: '14px', marginBottom: '24px' }}>
-          곡 기반으로 연주자와 앙상블을 연결하는 클래식 음악 플랫폼
-        </p>
-
-        {/* 검색 바 */}
         <HomeSearchBar popularComposers={topComposers} />
-
-        {/* CTA 버튼 */}
-        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginTop: '24px' }}>
-          <Link href="/gigs/new">
-            <button
-              style={{
-                height: '44px',
-                padding: '0 28px',
-                borderRadius: '10px',
-                backgroundColor: INK,
-                color: WARM_WHITE,
-                fontSize: '14px',
-                fontWeight: 600,
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            >
-              모집하기
-            </button>
-          </Link>
-          <Link href="/gigs">
-            <button
-              style={{
-                height: '44px',
-                padding: '0 28px',
-                borderRadius: '10px',
-                backgroundColor: WARM_WHITE,
-                color: INK,
-                fontSize: '14px',
-                fontWeight: 600,
-                border: `1.5px solid #e5e0d8`,
-                cursor: 'pointer',
-              }}
-            >
-              지원하기
-            </button>
-          </Link>
-        </div>
       </section>
 
-      {/* 통계 배너 — 곡 중심 */}
-      <section style={{ maxWidth: '512px', margin: '0 auto', padding: '0 24px 24px' }}>
-        <div style={{ backgroundColor: WARM_WHITE, borderRadius: '16px', padding: '16px', border: '1px solid #f0ebe3' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px', textAlign: 'center' }}>
-            <div>
-              <p style={{ fontSize: '20px', fontWeight: 900, color: INK }}>{piecesCount || 0}</p>
-              <p style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>곡 연주 중</p>
+      {/* 프로필 미완성 배너 */}
+      {user && isProfileIncomplete && (
+        <section className="max-w-lg mx-auto px-6 pb-4">
+          <Link href="/profile/edit">
+            <div className="bg-[#fdf8ee] border border-[#f0e6d3] rounded-xl px-4 py-3 flex items-center justify-between">
+              <span className="text-[13px] text-[#7a6b50]">
+                프로필을 완성하면 맞춤 추천을 받을 수 있어요
+              </span>
+              <span className="text-[13px] text-accent font-semibold">→</span>
             </div>
-            <div>
-              <p style={{ fontSize: '20px', fontWeight: 900, color: INK }}>{activeGigsCount || 0}</p>
-              <p style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>팀 모집 중</p>
-            </div>
-            <div>
-              <p style={{ fontSize: '20px', fontWeight: 900, color: INK }}>{usersCount || 0}</p>
-              <p style={{ fontSize: '11px', color: '#999', marginTop: '2px' }}>명 활동 중</p>
-            </div>
-          </div>
-        </div>
-      </section>
+          </Link>
+        </section>
+      )}
 
-      {/* 지금 연주 중인 곡 */}
+      {/* 지금 모집 중인 곡 */}
       {groupedPieces.length > 0 && (
-        <section style={{ maxWidth: '512px', margin: '0 auto', padding: '0 24px 24px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <h2 style={{ fontSize: '18px', fontWeight: 700, color: INK }}>
-              🎵 지금 연주 중인 곡
-            </h2>
-            <Link href="/gigs" style={{ fontSize: '12px', color: ACCENT, fontWeight: 500, textDecoration: 'none' }}>
+        <section className="max-w-lg mx-auto px-6 pb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-lg font-bold text-ink">🎼 지금 모집 중인 곡</h2>
+            <Link href="/gigs" className="text-xs text-accent font-medium">
               전체 보기 →
             </Link>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <div className="flex flex-col gap-3">
             {groupedPieces.map((piece: any) => (
               <PieceGroupCard key={piece.piece_id} piece={piece} />
             ))}
@@ -284,225 +205,73 @@ export default async function HomePage() {
         </section>
       )}
 
-      {/* 프로필 미완성 배너 */}
-      {user && isProfileIncomplete && (
-        <section style={{ maxWidth: '512px', margin: '0 auto', padding: '0 24px 16px' }}>
-          <Link href="/profile/edit" style={{ textDecoration: 'none' }}>
-            <div style={{
-              backgroundColor: '#fdf8ee',
-              border: '1px solid #f0e6d3',
-              borderRadius: '12px',
-              padding: '12px 16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-            }}>
-              <span style={{ fontSize: '13px', color: '#7a6b50' }}>
-                프로필을 완성하면 맞춤 추천을 받을 수 있어요
-              </span>
-              <span style={{ fontSize: '13px', color: ACCENT, fontWeight: 600 }}>→</span>
-            </div>
-          </Link>
+      {/* 최근 등록 — 수평 스크롤 */}
+      {latestGigs && latestGigs.length > 0 && (
+        <section className="max-w-lg mx-auto pb-6">
+          <div className="flex items-center justify-between mb-3 px-6">
+            <h2 className="text-lg font-bold text-ink">최근 등록</h2>
+            <Link href="/gigs" className="text-xs text-accent font-medium">
+              전체 보기 →
+            </Link>
+          </div>
+          <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory pb-2 -mx-0 px-6 scrollbar-hide">
+            {latestGigs.map((gig: any) => (
+              <Link key={gig.id} href={`/gigs/${gig.id}`} className="snap-start shrink-0 w-[260px]">
+                <div className="bg-white rounded-2xl border border-gray-100 p-4 shadow-sm">
+                  <p className="text-xs text-gray-500">{getComposerName(gig)}</p>
+                  <p className="font-bold text-sm mt-1 line-clamp-2">{getPieceTitle(gig)}</p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    {(gig as any).ensemble_name || gig.author?.display_name}
+                  </p>
+                </div>
+              </Link>
+            ))}
+          </div>
         </section>
       )}
 
-      {/* 곡 기반 프로젝트 */}
-      <section style={{ maxWidth: '512px', margin: '0 auto', padding: '0 24px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, color: INK }}>
-            곡 기반 프로젝트
-          </h2>
-          <Link href="/gigs?tab=project" style={{ fontSize: '12px', color: ACCENT, fontWeight: 500, textDecoration: 'none' }}>
-            전체 보기 →
-          </Link>
+      {/* 숫자로 보는 TUTTI */}
+      <section className="max-w-lg mx-auto px-6 pb-6">
+        <h2 className="text-lg font-bold text-ink mb-3">숫자로 보는 TUTTI</h2>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="bg-white rounded-xl p-3 text-center border border-gray-100">
+            <p className="text-xl font-black text-accent">{piecesCount || 0}</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">등록된 곡</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 text-center border border-gray-100">
+            <p className="text-xl font-black text-accent">{activeGigsCount || 0}</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">모집 중인 팀</p>
+          </div>
+          <div className="bg-white rounded-xl p-3 text-center border border-gray-100">
+            <p className="text-xl font-black text-accent">{usersCount || 0}</p>
+            <p className="text-[11px] text-gray-500 mt-0.5">연주자</p>
+          </div>
         </div>
-        {projectGigs && projectGigs.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {projectGigs.map((gig: any) => {
-              const pieceNames = getPieceNames(gig)
-              const periods = getPeriodTags(gig)
-              const authorName = getAuthorName(gig)
-              return (
-                <Link key={gig.id} href={`/gigs/${gig.id}`} style={{ textDecoration: 'none' }}>
-                  <div style={{
-                    backgroundColor: WARM_WHITE,
-                    borderRadius: '16px',
-                    border: '1px solid #f0ebe3',
-                    padding: '16px',
-                    transition: 'box-shadow 0.2s',
-                  }}>
-                    {pieceNames.length > 0 && (
-                      <div style={{ marginBottom: '6px' }}>
-                        {pieceNames.slice(0, 3).map((name: string, i: number) => (
-                          <p key={i} style={{ fontSize: '12px', fontWeight: 700, color: ACCENT }}>
-                            {name}
-                          </p>
-                        ))}
-                        {pieceNames.length > 3 && (
-                          <p style={{ fontSize: '12px', color: '#c4a35a' }}>+{pieceNames.length - 3}곡</p>
-                        )}
-                      </div>
-                    )}
-                    <h3 style={{ fontWeight: 700, color: INK, fontSize: '14px', lineHeight: 1.4 }}>{gig.title}</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' }}>
-                      {periods.map((p: string) => (
-                        <span key={p} style={{
-                          fontSize: '10px',
-                          padding: '2px 8px',
-                          borderRadius: '20px',
-                          backgroundColor: '#f5eedf',
-                          color: '#8a7650',
-                          fontWeight: 500,
-                        }}>
-                          #{periodKo[p] || p}
-                        </span>
-                      ))}
-                      {(gig as any).region?.[0]?.name && (
-                        <span style={{ fontSize: '12px', color: '#bbb' }}>{(gig as any).region[0].name}</span>
-                      )}
-                      {authorName && (
-                        <span style={{ fontSize: '11px', color: '#aaa' }}>by {authorName}</span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        ) : (
-          <div style={{
-            backgroundColor: WARM_WHITE,
-            borderRadius: '16px',
-            border: '1px solid #f0ebe3',
-            padding: '24px',
-            textAlign: 'center',
-          }}>
-            <p style={{ fontSize: '14px', color: '#8a7650', fontWeight: 500 }}>연주하고 싶은 곡이 있나요?</p>
-            <p style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>곡 기반 프로젝트를 올려보세요!</p>
-            <Link href="/gigs/new?mode=project">
-              <button style={{
-                marginTop: '12px',
-                height: '36px',
-                padding: '0 20px',
-                borderRadius: '8px',
-                backgroundColor: INK,
-                color: WARM_WHITE,
-                fontSize: '13px',
-                fontWeight: 600,
-                border: 'none',
-                cursor: 'pointer',
-              }}>
-                프로젝트 만들기
-              </button>
-            </Link>
-          </div>
-        )}
-      </section>
-
-      {/* 최신 공고 */}
-      <section style={{ maxWidth: '512px', margin: '0 auto', padding: '0 24px 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-          <h2 style={{ fontSize: '18px', fontWeight: 700, color: INK }}>최신 공고</h2>
-          <Link href="/gigs" style={{ fontSize: '12px', color: ACCENT, fontWeight: 500, textDecoration: 'none' }}>
-            전체 보기 →
-          </Link>
-        </div>
-        {latestGigs && latestGigs.length > 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {latestGigs.map((gig: any) => {
-              const pieceNames = getPieceNames(gig)
-              const periods = getPeriodTags(gig)
-              const authorName = getAuthorName(gig)
-              return (
-                <Link key={gig.id} href={`/gigs/${gig.id}`} style={{ textDecoration: 'none' }}>
-                  <div style={{
-                    backgroundColor: '#fff',
-                    borderRadius: '16px',
-                    border: '1px solid #f0ebe3',
-                    padding: '16px',
-                    transition: 'box-shadow 0.2s',
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-                      {gig.is_project ? (
-                        <span style={{
-                          fontSize: '11px', fontWeight: 700, padding: '2px 8px',
-                          borderRadius: '20px', backgroundColor: '#f5eedf', color: '#8a7650',
-                        }}>
-                          곡 기반 프로젝트
-                        </span>
-                      ) : (
-                        <span style={{
-                          fontSize: '11px', fontWeight: 700, padding: '2px 8px',
-                          borderRadius: '20px',
-                          backgroundColor: gig.gig_type === 'hiring' ? '#eef0f7' : '#eef7f0',
-                          color: gig.gig_type === 'hiring' ? '#4a5578' : '#3d6b4f',
-                        }}>
-                          {gig.gig_type === 'hiring' ? '연주자 모집' : '팀 찾기'}
-                        </span>
-                      )}
-                      {(gig as any).region?.[0]?.name && (
-                        <span style={{ fontSize: '12px', color: '#bbb' }}>{(gig as any).region[0].name}</span>
-                      )}
-                    </div>
-                    {pieceNames.length > 0 && (
-                      <p style={{ fontSize: '12px', color: ACCENT, fontWeight: 500, marginBottom: '2px' }}>
-                        {pieceNames.slice(0, 2).join(' / ')}
-                        {pieceNames.length > 2 ? ` +${pieceNames.length - 2}곡` : ''}
-                      </p>
-                    )}
-                    <h3 style={{ fontWeight: 700, color: INK, fontSize: '14px', lineHeight: 1.4 }}>{gig.title}</h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px', flexWrap: 'wrap' }}>
-                      {periods.map((p: string) => (
-                        <span key={p} style={{
-                          fontSize: '10px', padding: '2px 6px', borderRadius: '4px',
-                          backgroundColor: '#f5f3ef', color: '#8a8070',
-                        }}>
-                          #{periodKo[p] || p}
-                        </span>
-                      ))}
-                      {authorName && (
-                        <span style={{ fontSize: '11px', color: '#aaa' }}>by {authorName}</span>
-                      )}
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        ) : (
-          <div style={{
-            backgroundColor: '#fff',
-            borderRadius: '16px',
-            border: '1px solid #f0ebe3',
-            padding: '32px',
-            textAlign: 'center',
-          }}>
-            <p style={{ fontSize: '14px', color: '#999' }}>아직 공고가 없어요.</p>
-            <p style={{ fontSize: '13px', color: '#bbb', marginTop: '4px' }}>첫 번째 공고를 올려보세요!</p>
-          </div>
-        )}
       </section>
 
       {/* 푸터 */}
-      <footer style={{ backgroundColor: WARM_WHITE, borderTop: '1px solid #f0ebe3', marginTop: '32px' }}>
-        <div style={{ maxWidth: '512px', margin: '0 auto', padding: '24px', textAlign: 'center' }}>
-          <span style={{ fontSize: '20px', fontWeight: 900, color: ACCENT, letterSpacing: '-0.025em' }}>TUTTI</span>
-          <p style={{ fontSize: '11px', color: '#999', marginTop: '12px' }}>© 2026 TUTTI. 클래식 연주자 매칭</p>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginTop: '12px' }}>
-            <Link href="/terms" style={{ fontSize: '11px', color: '#aaa', textDecoration: 'none' }}>
-              이용약관
-            </Link>
-            <span style={{ color: '#ddd' }}>·</span>
-            <Link href="/privacy" style={{ fontSize: '11px', color: '#aaa', textDecoration: 'none' }}>
-              개인정보처리방침
-            </Link>
-            <span style={{ color: '#ddd' }}>·</span>
-            <a href="mailto:support@tutti.music" style={{ fontSize: '11px', color: '#aaa', textDecoration: 'none' }}>
+      <footer className="bg-warm-white border-t border-[#f0ebe3] mt-8">
+        <div className="max-w-lg mx-auto px-6 py-6 text-center">
+          <span className="text-xl font-black text-accent tracking-tight">TUTTI</span>
+          <p className="text-[11px] text-gray-400 mt-3">© 2026 TUTTI. 클래식 연주자 매칭</p>
+          <div className="flex items-center justify-center gap-4 mt-3">
+            <Link href="/terms" className="text-[11px] text-gray-400">이용약관</Link>
+            <span className="text-gray-200">·</span>
+            <Link href="/privacy" className="text-[11px] text-gray-400">개인정보처리방침</Link>
+            <span className="text-gray-200">·</span>
+            <a href="mailto:support@tutti.music" className="text-[11px] text-gray-400">
               문의: support@tutti.music
             </a>
           </div>
         </div>
       </footer>
+
+      {/* FAB — 모집 글 쓰기 */}
+      <Link href="/gigs/new" className="fixed bottom-24 right-6 z-40">
+        <button className="w-14 h-14 rounded-full bg-accent text-white shadow-lg flex items-center justify-center text-2xl font-bold hover:bg-accent/90 transition-colors">
+          +
+        </button>
+      </Link>
 
       {/* 공통 하단 네비바 */}
       <BottomNavBar />

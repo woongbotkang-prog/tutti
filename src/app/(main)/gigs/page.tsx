@@ -3,43 +3,49 @@
 import { useState, useEffect, useCallback, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { Search, SlidersHorizontal, X } from 'lucide-react'
+import { Search, X, ChevronDown } from 'lucide-react'
 import { fetchGigs, type GigListItem, type SortOption } from '@/lib/supabase/queries'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 
 // ── 상수 ──────────────────────────────────────────────────────
-const INSTRUMENTS = [
+const TABS = [
+  { key: 'all',       label: '전체' },
+  { key: 'orchestra', label: '오케스트라' },
+  { key: 'chamber',   label: '실내악' },
+] as const
+
+type TabKey = (typeof TABS)[number]['key']
+
+const FILTER_REGIONS = ['전체', '서울', '경기', '인천', '부산', '대구', '대전', '광주', '기타']
+const FILTER_INSTRUMENTS = [
   '전체', '바이올린', '비올라', '첼로', '콘트라베이스',
   '플루트', '오보에', '클라리넷', '바순', '호른',
   '트럼펫', '트롬본', '피아노', '타악기',
 ]
-const REGIONS = ['전체', '서울', '경기', '인천', '부산', '대구', '대전', '광주', '기타']
-
-const PERIODS = ['전체', 'baroque', 'classical', 'romantic', 'modern', 'contemporary']
-const PERIOD_LABELS: Record<string, string> = {
-  '전체': '전체',
-  'baroque': '바로크',
-  'classical': '고전',
-  'romantic': '낭만',
-  'modern': '근현대',
-  'contemporary': '현대',
-}
-
-const SKILL_LEVELS = ['전체', 'beginner', 'elementary', 'intermediate', 'advanced', 'professional']
-const LEVEL_LABELS: Record<string, string> = {
-  'beginner': '입문',
-  'elementary': '초급',
-  'intermediate': '중급',
-  'advanced': '고급',
-  'professional': '전문가',
-}
+const FILTER_PERIODS = [
+  { key: '전체',        label: '전체' },
+  { key: 'baroque',    label: '바로크' },
+  { key: 'classical',  label: '고전' },
+  { key: 'romantic',   label: '낭만' },
+  { key: 'modern',     label: '근현대' },
+  { key: 'contemporary', label: '현대' },
+]
+const FILTER_LEVELS = [
+  { key: '전체',          label: '전체' },
+  { key: 'beginner',     label: '입문' },
+  { key: 'elementary',   label: '초급' },
+  { key: 'intermediate', label: '중급' },
+  { key: 'advanced',     label: '고급' },
+  { key: 'professional', label: '전문가' },
+]
 
 const SORT_OPTIONS: { key: SortOption; label: string }[] = [
-  { key: 'latest',   label: '최신순' },
-  { key: 'expiring', label: '마감임박' },
-  { key: 'popular',  label: '인기순' },
+  { key: 'latest',  label: '최신순' },
+  { key: 'popular', label: '인기순' },
 ]
+
+type FilterKey = 'region' | 'instrument' | 'period' | 'level'
 
 const PAGE_SIZE = 10
 
@@ -89,6 +95,9 @@ function GigCard({ gig }: { gig: GigListItem }) {
   const composerName = firstPiece?.composer?.name_en || firstPiece?.composer?.name || null
   const ensembleType = getEnsembleType(instruments.length)
 
+  // 단체명 표시 (있으면), 없으면 작성자명
+  const teamName = gig.ensemble_name || gig.author?.display_name || null
+
   return (
     <Link href={`/gigs/${gig.id}`}>
       <div className={`bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md hover:border-cream-dark transition-all active:scale-[0.99] ${isExpired ? 'opacity-50' : ''}`}>
@@ -102,7 +111,7 @@ function GigCard({ gig }: { gig: GigListItem }) {
           </span>
         </div>
 
-        {/* 곡 제목 (한국어 — 메인) */}
+        {/* 곡 제목 (메인) */}
         <h3 className="text-[16px] font-bold text-gray-900 leading-snug mb-0.5">
           {pieceTitle}
         </h3>
@@ -112,7 +121,7 @@ function GigCard({ gig }: { gig: GigListItem }) {
           <p className="text-xs text-gray-400 mb-2">{pieceAltTitle}</p>
         )}
 
-        {/* 지역 · 마감 · 작성자 */}
+        {/* 지역 · 마감 · 단체/작성자명 */}
         <div className="flex items-center gap-1 text-xs text-gray-500 mb-2.5 mt-2">
           <span>{gig.region?.name || '지역미정'}</span>
           {daysLeft !== null && !isExpired && (
@@ -129,10 +138,8 @@ function GigCard({ gig }: { gig: GigListItem }) {
               <span className="text-gray-400">마감</span>
             </>
           )}
-          {gig.author?.display_name && (
-            <>
-              <span className="ml-auto text-gray-400">by {gig.author.display_name}</span>
-            </>
+          {teamName && (
+            <span className="ml-auto text-gray-400">{teamName}</span>
           )}
         </div>
 
@@ -154,6 +161,33 @@ function GigCard({ gig }: { gig: GigListItem }) {
   )
 }
 
+// ── 필터 드롭다운 패널 ─────────────────────────────────────────
+interface FilterPanelProps {
+  options: { key: string; label: string }[]
+  selected: string
+  onSelect: (key: string) => void
+}
+
+function FilterPanel({ options, selected, onSelect }: FilterPanelProps) {
+  return (
+    <div className="flex flex-wrap gap-2 px-4 py-3 bg-white border-b border-gray-100">
+      {options.map(opt => (
+        <button
+          key={opt.key}
+          onClick={() => onSelect(opt.key)}
+          className={`text-[12px] font-medium px-3 py-1 rounded-full border transition-colors ${
+            selected === opt.key
+              ? 'bg-ink text-white border-ink'
+              : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 // ── 메인 페이지 ────────────────────────────────────────────────
 export default function GigsPageWrapper() {
   return (
@@ -166,31 +200,42 @@ export default function GigsPageWrapper() {
 function GigsPage() {
   const searchParamsHook = useSearchParams()
 
-  const [activeTab, setActiveTab]             = useState<'all' | 'hiring' | 'seeking' | 'project'>('all')
+  // 탭
+  const [activeTab, setActiveTab] = useState<TabKey>('all')
+
+  // 필터
+  const [selectedRegion,     setSelectedRegion]     = useState('전체')
   const [selectedInstrument, setSelectedInstrument] = useState('전체')
-  const [selectedRegion, setSelectedRegion]   = useState('전체')
-  const [selectedPeriod, setSelectedPeriod]   = useState('전체')
-  const [selectedLevel, setSelectedLevel]     = useState('전체')
-  const [sortBy, setSortBy]                   = useState<SortOption>('latest')
-  const [searchQuery, setSearchQuery]         = useState(() => searchParamsHook.get('search') || '')
-  const [searchInput, setSearchInput]         = useState(() => searchParamsHook.get('search') || '')
+  const [selectedPeriod,     setSelectedPeriod]     = useState('전체')
+  const [selectedLevel,      setSelectedLevel]      = useState('전체')
+  const [sortBy,             setSortBy]             = useState<SortOption>('latest')
 
-  const [gigs, setGigs]       = useState<GigListItem[]>([])
-  const [page, setPage]       = useState(0)
-  const [hasMore, setHasMore] = useState(true)
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [error, setError]     = useState<string | null>(null)
+  // 열려있는 필터 패널 (한 번에 하나만)
+  const [openFilter, setOpenFilter] = useState<FilterKey | null>(null)
 
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  // 정렬 드롭다운
+  const [sortOpen, setSortOpen] = useState(false)
+
+  // 검색
+  const [searchQuery, setSearchQuery] = useState(() => searchParamsHook.get('search') || '')
+  const [searchInput, setSearchInput] = useState(() => searchParamsHook.get('search') || '')
+
+  // 데이터
+  const [gigs,        setGigs]        = useState<GigListItem[]>([])
+  const [page,        setPage]        = useState(0)
+  const [hasMore,     setHasMore]     = useState(true)
+  const [isLoading,   setIsLoading]   = useState(true)
+  const [error,       setError]       = useState<string | null>(null)
+
+  const debounceRef  = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const observerRef  = useRef<IntersectionObserver | null>(null)
+  const loadMoreRef  = useRef<HTMLDivElement | null>(null)
 
   // ── 검색어 디바운스 ───────────────────────────────────────────
   const handleSearchChange = (value: string) => {
     setSearchInput(value)
     if (debounceRef.current) clearTimeout(debounceRef.current)
-    debounceRef.current = setTimeout(() => {
-      setSearchQuery(value)
-    }, 400)
+    debounceRef.current = setTimeout(() => setSearchQuery(value), 400)
   }
 
   const clearSearch = () => {
@@ -199,24 +244,26 @@ function GigsPage() {
     if (debounceRef.current) clearTimeout(debounceRef.current)
   }
 
-  // ── 데이터 로드 (첫 페이지 — 필터 변경 시 초기화) ─────────────
+  // ── 필터 파라미터 추출 ────────────────────────────────────────
+  const buildParams = useCallback((pg: number) => ({
+    gigCategory: activeTab !== 'all' ? (activeTab as 'orchestra' | 'chamber') : undefined,
+    instrumentName: selectedInstrument,
+    regionName: selectedRegion,
+    period: selectedPeriod !== '전체' ? selectedPeriod : undefined,
+    minSkillLevel: selectedLevel !== '전체' ? selectedLevel : undefined,
+    searchQuery,
+    sortBy,
+    page: pg,
+    limit: PAGE_SIZE,
+    includeExpired: true,
+  }), [activeTab, selectedInstrument, selectedRegion, selectedPeriod, selectedLevel, searchQuery, sortBy])
+
+  // ── 초기 로드 ─────────────────────────────────────────────────
   const loadInitial = useCallback(async () => {
-    setLoading(true)
+    setIsLoading(true)
     setError(null)
     try {
-      const result = await fetchGigs({
-        gigType: activeTab === 'project' ? undefined : (activeTab !== 'all' ? activeTab : undefined),
-        isProject: activeTab === 'project' ? true : (activeTab === 'hiring' || activeTab === 'seeking') ? false : undefined,
-        instrumentName: selectedInstrument,
-        regionName: selectedRegion,
-        period: selectedPeriod !== '전체' ? selectedPeriod : undefined,
-        minSkillLevel: selectedLevel !== '전체' ? selectedLevel : undefined,
-        searchQuery,
-        sortBy,
-        page: 0,
-        limit: PAGE_SIZE,
-        includeExpired: true,
-      })
+      const result = await fetchGigs(buildParams(0))
       setGigs(result.data)
       setHasMore(result.hasMore)
       setPage(0)
@@ -224,43 +271,45 @@ function GigsPage() {
       console.error('fetchGigs error:', e)
       setError('공고를 불러오는 데 실패했습니다.')
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
-  }, [activeTab, selectedInstrument, selectedRegion, selectedPeriod, selectedLevel, searchQuery, sortBy])
+  }, [buildParams])
 
-  // ── 더보기 ────────────────────────────────────────────────────
-  const loadMore = async () => {
-    if (loadingMore || !hasMore) return
-    setLoadingMore(true)
+  // ── 더 불러오기 ───────────────────────────────────────────────
+  const loadMore = useCallback(async () => {
+    if (!hasMore || isLoading) return
+    setIsLoading(true)
     const nextPage = page + 1
     try {
-      const result = await fetchGigs({
-        gigType: activeTab === 'project' ? undefined : (activeTab !== 'all' ? activeTab : undefined),
-        isProject: activeTab === 'project' ? true : (activeTab === 'hiring' || activeTab === 'seeking') ? false : undefined,
-        instrumentName: selectedInstrument,
-        regionName: selectedRegion,
-        period: selectedPeriod !== '전체' ? selectedPeriod : undefined,
-        minSkillLevel: selectedLevel !== '전체' ? selectedLevel : undefined,
-        searchQuery,
-        sortBy,
-        page: nextPage,
-        limit: PAGE_SIZE,
-        includeExpired: true,
-      })
+      const result = await fetchGigs(buildParams(nextPage))
       setGigs(prev => [...prev, ...result.data])
       setHasMore(result.hasMore)
       setPage(nextPage)
     } catch {
       // 무시
     } finally {
-      setLoadingMore(false)
+      setIsLoading(false)
     }
-  }
+  }, [hasMore, isLoading, page, buildParams])
 
-  // 필터/정렬/탭 변경 시 첫 페이지 재로드
+  // 필터 변경 시 초기화 재로드
+  useEffect(() => { loadInitial() }, [loadInitial])
+
+  // ── Intersection Observer (무한 스크롤) ───────────────────────
   useEffect(() => {
-    loadInitial()
-  }, [loadInitial])
+    if (!loadMoreRef.current) return
+    observerRef.current?.disconnect()
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !isLoading) {
+          loadMore()
+        }
+      },
+      { threshold: 0.1 }
+    )
+    observerRef.current.observe(loadMoreRef.current)
+    return () => observerRef.current?.disconnect()
+  }, [hasMore, isLoading, loadMore])
 
   // ── 필터 초기화 여부 ──────────────────────────────────────────
   const isFiltered =
@@ -277,21 +326,75 @@ function GigsPage() {
     setSelectedPeriod('전체')
     setSelectedLevel('전체')
     setSortBy('latest')
+    setOpenFilter(null)
     clearSearch()
   }
 
-  // ─────────────────────────────────────────────────────────────
+  // 필터 버튼 텍스트
+  const filterLabel = (key: FilterKey) => {
+    switch (key) {
+      case 'region':     return selectedRegion     !== '전체' ? `지역: ${selectedRegion}`     : '지역'
+      case 'instrument': return selectedInstrument !== '전체' ? `악기: ${selectedInstrument}` : '악기'
+      case 'period': {
+        const p = FILTER_PERIODS.find(p => p.key === selectedPeriod)
+        return p && p.key !== '전체' ? `시대: ${p.label}` : '시대'
+      }
+      case 'level': {
+        const l = FILTER_LEVELS.find(l => l.key === selectedLevel)
+        return l && l.key !== '전체' ? `실력: ${l.label}` : '실력'
+      }
+    }
+  }
+
+  const toggleFilter = (key: FilterKey) =>
+    setOpenFilter(prev => (prev === key ? null : key))
+
+  // 현재 열린 패널의 옵션/selected/onSelect
+  const panelProps = (): FilterPanelProps | null => {
+    switch (openFilter) {
+      case 'region':
+        return {
+          options: FILTER_REGIONS.map(r => ({ key: r, label: r })),
+          selected: selectedRegion,
+          onSelect: (v) => { setSelectedRegion(v); setOpenFilter(null) },
+        }
+      case 'instrument':
+        return {
+          options: FILTER_INSTRUMENTS.map(i => ({ key: i, label: i })),
+          selected: selectedInstrument,
+          onSelect: (v) => { setSelectedInstrument(v); setOpenFilter(null) },
+        }
+      case 'period':
+        return {
+          options: FILTER_PERIODS,
+          selected: selectedPeriod,
+          onSelect: (v) => { setSelectedPeriod(v); setOpenFilter(null) },
+        }
+      case 'level':
+        return {
+          options: FILTER_LEVELS,
+          selected: selectedLevel,
+          onSelect: (v) => { setSelectedLevel(v); setOpenFilter(null) },
+        }
+      default:
+        return null
+    }
+  }
+
+  const currentPanel = panelProps()
+
+  // ── 렌더 ─────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
 
-      {/* 헤더 — TUTTI 로고 + 공고 올리기 */}
+      {/* 헤더 */}
       <header className="bg-white sticky top-0 z-20 border-b border-gray-100">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <Link href="/">
             <span className="text-xl font-black text-accent tracking-tight">TUTTI</span>
           </Link>
           <Link href="/gigs/new">
-            <Button size="sm" className="bg-ink hover:bg-ink-light">+ 공고 올리기</Button>
+            <Button size="sm" className="bg-ink text-white hover:bg-ink/90">+ 공고 올리기</Button>
           </Link>
         </div>
       </header>
@@ -299,20 +402,13 @@ function GigsPage() {
       {/* 탭 */}
       <div className="bg-white border-b border-gray-100">
         <div className="flex max-w-lg mx-auto">
-          {[
-            { key: 'all',     label: '전체' },
-            { key: 'project', label: '🎼 프로젝트' },
-            { key: 'hiring',  label: '연주자 모집' },
-            { key: 'seeking', label: '팀 찾기' },
-          ].map(tab => (
+          {TABS.map(tab => (
             <button
               key={tab.key}
-              onClick={() => setActiveTab(tab.key as typeof activeTab)}
+              onClick={() => setActiveTab(tab.key)}
               className={`flex-1 py-3 text-sm font-medium border-b-2 transition-colors ${
                 activeTab === tab.key
-                  ? tab.key === 'project'
-                    ? 'border-ink text-accent'
-                    : 'border-ink text-accent'
+                  ? 'border-ink text-accent'
                   : 'border-transparent text-gray-500'
               }`}
             >
@@ -323,14 +419,14 @@ function GigsPage() {
       </div>
 
       {/* 검색 바 */}
-      <div className="bg-white border-b border-gray-100 px-4 py-2.5 max-w-lg mx-auto">
-        <div className="relative">
+      <div className="bg-white border-b border-gray-100 px-4 py-2.5">
+        <div className="relative max-w-lg mx-auto">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
           <input
             type="text"
             value={searchInput}
             onChange={e => handleSearchChange(e.target.value)}
-            placeholder="곡명, 공고 제목으로 검색..."
+            placeholder="곡명, 작곡가, 공고 제목으로 검색..."
             className="w-full pl-9 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-accent focus:bg-white transition-colors"
           />
           {searchInput && (
@@ -344,112 +440,82 @@ function GigsPage() {
         </div>
       </div>
 
-      {/* 필터 + 정렬 — max-w-lg로 다른 UI와 폭 통일 */}
-      <div className="bg-white border-b border-gray-100 px-4 py-2 flex items-center gap-1.5 overflow-x-auto max-w-lg mx-auto">
-        {/* 악기 선택 */}
-        <select
-          value={selectedInstrument}
-          onChange={e => setSelectedInstrument(e.target.value)}
-          className={`shrink-0 text-[11px] border rounded-full px-2.5 py-1 bg-white focus:outline-none transition-colors ${
-            selectedInstrument !== '전체'
-              ? 'border-accent text-accent bg-cream'
-              : 'border-gray-200 text-gray-600'
-          }`}
-        >
-          {INSTRUMENTS.map(i => <option key={i}>{i}</option>)}
-        </select>
+      {/* 필터 바 */}
+      <div className="bg-white border-b border-gray-100 sticky top-[57px] z-10">
+        <div className="max-w-lg mx-auto px-4 py-2 flex items-center gap-2 overflow-x-auto">
+          {/* 필터 버튼들 */}
+          {(['region', 'instrument', 'period', 'level'] as FilterKey[]).map(key => {
+            const isActive = openFilter === key
+            const hasValue =
+              (key === 'region'     && selectedRegion     !== '전체') ||
+              (key === 'instrument' && selectedInstrument !== '전체') ||
+              (key === 'period'     && selectedPeriod     !== '전체') ||
+              (key === 'level'      && selectedLevel      !== '전체')
+            return (
+              <button
+                key={key}
+                onClick={() => toggleFilter(key)}
+                className={`shrink-0 flex items-center gap-1 text-[12px] font-medium px-3 py-1.5 rounded-full border transition-colors ${
+                  isActive || hasValue
+                    ? 'bg-ink text-white border-ink'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                }`}
+              >
+                {filterLabel(key)}
+                <ChevronDown className={`w-3 h-3 transition-transform ${isActive ? 'rotate-180' : ''}`} />
+              </button>
+            )
+          })}
 
-        {/* 지역 선택 */}
-        <select
-          value={selectedRegion}
-          onChange={e => setSelectedRegion(e.target.value)}
-          className={`shrink-0 text-[11px] border rounded-full px-2.5 py-1 bg-white focus:outline-none transition-colors ${
-            selectedRegion !== '전체'
-              ? 'border-accent text-accent bg-cream'
-              : 'border-gray-200 text-gray-600'
-          }`}
-        >
-          {REGIONS.map(r => <option key={r}>{r}</option>)}
-        </select>
-
-        {/* 구분선 */}
-        <div className="w-px h-4 bg-gray-200 shrink-0" />
-
-        {/* 정렬 옵션 */}
-        {SORT_OPTIONS.map(opt => (
-          <button
-            key={opt.key}
-            onClick={() => setSortBy(opt.key)}
-            className={`shrink-0 text-[11px] px-2.5 py-1 rounded-full border transition-colors font-medium ${
-              sortBy === opt.key
-                ? 'bg-ink text-white border-ink'
-                : 'border-gray-200 text-gray-600 bg-white hover:border-cream-dark'
-            }`}
-          >
-            {opt.label}
-          </button>
-        ))}
-
-        {/* 필터 초기화 */}
-        {isFiltered && (
-          <>
-            <div className="w-px h-4 bg-gray-200 shrink-0" />
+          {/* 필터 초기화 */}
+          {isFiltered && (
             <button
               onClick={resetFilters}
-              className="shrink-0 flex items-center gap-1 text-[11px] text-red-500 border border-red-200 rounded-full px-2.5 py-1 bg-red-50 hover:bg-red-100 transition-colors font-medium"
+              className="shrink-0 flex items-center gap-1 text-[12px] text-red-500 border border-red-200 rounded-full px-2.5 py-1.5 bg-red-50 hover:bg-red-100 transition-colors font-medium"
             >
               <X className="w-3 h-3" />
               초기화
             </button>
-          </>
-        )}
-      </div>
+          )}
 
-      {/* 시대/난이도 필터 — 항상 노출 */}
-      <div className="bg-gray-50 border-b border-gray-100">
-        <div className="max-w-lg mx-auto px-4 py-3">
-          <div className="grid grid-cols-2 gap-3">
-            {/* 시대 선택 */}
-            <div>
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">시대</label>
-              <select
-                value={selectedPeriod}
-                onChange={e => setSelectedPeriod(e.target.value)}
-                className={`w-full text-[11px] border rounded-lg px-2.5 py-1.5 bg-white focus:outline-none transition-colors ${
-                  selectedPeriod !== '전체'
-                    ? 'border-accent text-accent bg-cream'
-                    : 'border-gray-300 text-gray-600'
-                }`}
-              >
-                {PERIODS.map(p => (
-                  <option key={p} value={p}>{PERIOD_LABELS[p]}</option>
-                ))}
-              </select>
-            </div>
+          {/* 구분선 */}
+          <div className="flex-1" />
 
-            {/* 실력 선택 */}
-            <div>
-              <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider block mb-1.5">난이도</label>
-              <select
-                value={selectedLevel}
-                onChange={e => setSelectedLevel(e.target.value)}
-                className={`w-full text-[11px] border rounded-lg px-2.5 py-1.5 bg-white focus:outline-none transition-colors ${
-                  selectedLevel !== '전체'
-                    ? 'border-accent text-accent bg-cream'
-                    : 'border-gray-300 text-gray-600'
-                }`}
-              >
-                {SKILL_LEVELS.map(l => (
-                  <option key={l} value={l}>{l === '전체' ? '전체' : LEVEL_LABELS[l]}</option>
+          {/* 정렬 드롭다운 */}
+          <div className="relative shrink-0">
+            <button
+              onClick={() => setSortOpen(p => !p)}
+              className="flex items-center gap-1 text-[12px] font-medium px-3 py-1.5 rounded-full border border-gray-200 bg-white text-gray-700 hover:border-gray-400 transition-colors"
+            >
+              {SORT_OPTIONS.find(o => o.key === sortBy)?.label || '최신순'}
+              <ChevronDown className={`w-3 h-3 transition-transform ${sortOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {sortOpen && (
+              <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-30 min-w-[90px] overflow-hidden">
+                {SORT_OPTIONS.map(opt => (
+                  <button
+                    key={opt.key}
+                    onClick={() => { setSortBy(opt.key); setSortOpen(false) }}
+                    className={`w-full text-left px-3 py-2 text-[12px] font-medium transition-colors ${
+                      sortBy === opt.key
+                        ? 'bg-ink text-white'
+                        : 'text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
                 ))}
-              </select>
-            </div>
+              </div>
+            )}
           </div>
         </div>
+
+        {/* 열린 필터 패널 */}
+        {currentPanel && <FilterPanel {...currentPanel} />}
       </div>
 
-      {/* 결과 수 표시 */}
-      {!loading && (
+      {/* 결과 수 */}
+      {!isLoading && (
         <div className="max-w-lg mx-auto px-4 pt-3 pb-1">
           <p className="text-xs text-gray-400">
             {gigs.length}개 공고
@@ -469,8 +535,8 @@ function GigsPage() {
           </div>
         )}
 
-        {/* 스켈레톤 로딩 */}
-        {loading && !error && (
+        {/* 초기 스켈레톤 */}
+        {isLoading && gigs.length === 0 && !error && (
           <>
             {Array.from({ length: 5 }).map((_, i) => (
               <GigCardSkeleton key={i} />
@@ -479,7 +545,7 @@ function GigsPage() {
         )}
 
         {/* 빈 결과 */}
-        {!loading && !error && gigs.length === 0 && (
+        {!isLoading && !error && gigs.length === 0 && (
           <div className="text-center py-16 text-gray-400">
             <p className="text-4xl mb-3">🎵</p>
             {isFiltered ? (
@@ -497,7 +563,7 @@ function GigsPage() {
                 <p className="text-sm font-medium text-gray-500">아직 공고가 없어요</p>
                 <p className="text-xs text-gray-400 mt-1">첫 번째 공고를 올려보세요!</p>
                 <Link href="/gigs/new">
-                  <Button size="sm" className="mt-4 bg-ink hover:bg-ink-light">
+                  <Button size="sm" className="mt-4 bg-ink text-white hover:bg-ink/90">
                     공고 올리기
                   </Button>
                 </Link>
@@ -507,12 +573,15 @@ function GigsPage() {
         )}
 
         {/* 공고 카드 목록 */}
-        {!loading && gigs.map(gig => (
+        {gigs.map(gig => (
           <GigCard key={gig.id} gig={gig} />
         ))}
 
-        {/* 더보기 로딩 스켈레톤 */}
-        {loadingMore && (
+        {/* 무한 스크롤 트리거 */}
+        <div ref={loadMoreRef} className="h-10" />
+
+        {/* 추가 로딩 스켈레톤 */}
+        {isLoading && gigs.length > 0 && (
           <>
             {Array.from({ length: 3 }).map((_, i) => (
               <GigCardSkeleton key={`more-${i}`} />
@@ -520,21 +589,9 @@ function GigsPage() {
           </>
         )}
 
-        {/* 더보기 / 끝 */}
-        {!loading && !error && gigs.length > 0 && (
-          <div className="pt-2 pb-4">
-            {hasMore ? (
-              <button
-                onClick={loadMore}
-                disabled={loadingMore}
-                className="w-full py-3 text-sm font-medium text-accent border border-cream-dark rounded-2xl bg-white hover:bg-cream active:scale-[0.99] transition-all disabled:opacity-50"
-              >
-                {loadingMore ? '불러오는 중...' : '더보기'}
-              </button>
-            ) : (
-              <p className="text-center text-xs text-gray-300 py-2">모든 공고를 확인했어요 ✓</p>
-            )}
-          </div>
+        {/* 모두 로드됨 */}
+        {!isLoading && !hasMore && gigs.length > 0 && (
+          <p className="text-center text-xs text-gray-300 py-2">모든 공고를 확인했어요 ✓</p>
         )}
       </main>
     </div>

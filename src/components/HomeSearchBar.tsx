@@ -29,44 +29,12 @@ export default function HomeSearchBar({ popularComposers }: HomeSearchBarProps) 
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="작곡가, 시대, 곡명 검색..."
-          style={{
-            width: '100%',
-            height: '48px',
-            borderRadius: '12px',
-            border: '1.5px solid #e5e0d8',
-            backgroundColor: '#fffef9',
-            padding: '0 48px 0 16px',
-            fontSize: '14px',
-            color: '#1a1a1a',
-            outline: 'none',
-          }}
-          onFocus={(e) => {
-            e.currentTarget.style.borderColor = '#b8860b'
-            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(184,134,11,0.1)'
-          }}
-          onBlur={(e) => {
-            e.currentTarget.style.borderColor = '#e5e0d8'
-            e.currentTarget.style.boxShadow = 'none'
-          }}
+          placeholder="곡이나 작곡가를 검색하세요"
+          className="w-full h-12 rounded-xl border-[1.5px] border-[#e5e0d8] bg-warm-white px-4 pr-12 text-sm text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/10 transition-all"
         />
         <button
           type="submit"
-          style={{
-            position: 'absolute',
-            right: '4px',
-            top: '4px',
-            width: '40px',
-            height: '40px',
-            borderRadius: '10px',
-            backgroundColor: '#1a1a1a',
-            color: '#fffef9',
-            border: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-          }}
+          className="absolute right-1 top-1 w-10 h-10 rounded-[10px] bg-ink text-warm-white flex items-center justify-center hover:bg-ink/80 transition-colors"
           aria-label="검색"
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -77,32 +45,13 @@ export default function HomeSearchBar({ popularComposers }: HomeSearchBarProps) 
       </form>
 
       {popularComposers.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
-          <span style={{ fontSize: '12px', color: '#999', alignSelf: 'center' }}>인기</span>
+        <div className="flex flex-wrap gap-2 mt-3">
+          <span className="text-xs text-gray-400 self-center">인기</span>
           {popularComposers.map((c) => (
             <button
               key={c.name_en}
               onClick={() => handleTagClick(c.name_ko || c.name_en)}
-              style={{
-                fontSize: '12px',
-                padding: '4px 12px',
-                borderRadius: '20px',
-                border: '1px solid #e5e0d8',
-                backgroundColor: '#fffef9',
-                color: '#1a1a1a',
-                cursor: 'pointer',
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.backgroundColor = '#b8860b'
-                e.currentTarget.style.color = '#fffef9'
-                e.currentTarget.style.borderColor = '#b8860b'
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.backgroundColor = '#fffef9'
-                e.currentTarget.style.color = '#1a1a1a'
-                e.currentTarget.style.borderColor = '#e5e0d8'
-              }}
+              className="text-xs px-3 py-1 rounded-full border border-[#e5e0d8] bg-warm-white text-ink hover:bg-accent hover:text-warm-white hover:border-accent transition-all"
             >
               {c.name_ko || c.name_en}
             </button>
